@@ -24,38 +24,50 @@
         // Load ONNX model
         let session;
         async function loadModel() {
-            session = await ort.InferenceSession.create('yolov8n.onnx', {
-                executionProviders: ['wasm'],
-                wasmPaths: 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/'
-            });
-            console.log('ONNX model loaded');
+            try {
+                session = await ort.InferenceSession.create('yolov8n.onnx', {
+                    executionProviders: ['wasm'],
+                    wasmPaths: 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/'
+                });
+                console.log('ONNX model loaded');
+            } catch (error) {
+                console.error('Error loading ONNX model:', error);
+            }
         }
 
         // Start video stream
         async function startVideo() {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            video.srcObject = stream;
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+            } catch (error) {
+                console.error('Error accessing the camera:', error);
+            }
         }
 
         // Perform inference
         async function runInference() {
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            try {
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-            // Preprocess image data for ONNX model
-            const tensor = tf.browser.fromPixels(imageData)
-                .resizeBilinear([640, 640])
-                .expandDims(0)
-                .toFloat()
-                .div(tf.scalar(255.0));
+                // Preprocess image data for ONNX model
+                const tensor = tf.browser.fromPixels(imageData)
+                    .resizeBilinear([640, 640])
+                    .expandDims(0)
+                    .toFloat()
+                    .div(tf.scalar(255.0));
 
-            const inputTensor = new ort.Tensor('float32', tensor.dataSync(), [1, 3, 640, 640]);
+                const inputTensor = new ort.Tensor('float32', tensor.dataSync(), [1, 3, 640, 640]);
 
-            // Run inference
-            const results = await session.run({ input: inputTensor });
+                // Run inference
+                const results = await session.run({ input: inputTensor });
 
-            // Process and draw results
-            drawResults(results);
+                // Process and draw results
+                drawResults(results);
+            } catch (error) {
+                console.error('Error during inference:', error);
+            }
         }
 
         // Draw results on canvas
@@ -72,14 +84,16 @@
 
         // Initialize
         async function init() {
-            await loadModel();
-            await startVideo();
-            video.addEventListener('play', () => {
-                setInterval(runInference, 100); // Run inference every 100ms
-            });
+            try {
+                await loadModel();
+                await startVideo();
+                video.addEventListener('play', () => {
+                    setInterval(runInference, 100); // Run inference every 100ms
+                });
+            } catch (error) {
+                console.error('Error during initialization:', error);
+            }
         }
 
         init();
-    </script>
-</body>
-</html>
+  
