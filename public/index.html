@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YOLOv8n ONNX Inference</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.10.0/dist/ort.min.js"></script>
     <style>
         body { display: flex; flex-direction: column; align-items: center; }
         video { border: 1px solid black; }
@@ -24,7 +24,10 @@
         // Load ONNX model
         let session;
         async function loadModel() {
-            session = await ort.InferenceSession.create('yolov8n.onnx');
+            session = await ort.InferenceSession.create('yolov8n.onnx', {
+                executionProviders: ['wasm'],
+                wasmPaths: 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/'
+            });
             console.log('ONNX model loaded');
         }
 
@@ -80,4 +83,3 @@
     </script>
 </body>
 </html>
-
