@@ -25,13 +25,19 @@
         let session;
         async function loadModel() {
             try {
-                session = await ort.InferenceSession.create('./yolov8n.onnx', {
+                session = await ort.InferenceSession.create('yolov8n.onnx', {
                     executionProviders: ['wasm'],
-                    wasmPaths: 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/'
+                    wasmPaths: {
+                        'ort-wasm.wasm': 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort-wasm.wasm',
+                        'ort-wasm-simd.wasm': 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort-wasm-simd.wasm',
+                        'ort-wasm-threaded.wasm': 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort-wasm-threaded.wasm',
+                        'ort-wasm-simd-threaded.wasm': 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm'
+                    }
                 });
                 console.log('ONNX model loaded');
             } catch (error) {
                 console.error('Error loading ONNX model:', error);
+                alert('Failed to load ONNX model. Please check the console for more details.');
             }
         }
 
@@ -42,6 +48,7 @@
                 video.srcObject = stream;
             } catch (error) {
                 console.error('Error accessing the camera:', error);
+                alert('Failed to access the camera. Please check the console for more details.');
             }
         }
 
@@ -67,6 +74,7 @@
                 drawResults(results);
             } catch (error) {
                 console.error('Error during inference:', error);
+                alert('Failed during inference. Please check the console for more details.');
             }
         }
 
@@ -92,6 +100,7 @@
                 });
             } catch (error) {
                 console.error('Error during initialization:', error);
+                alert('Initialization failed. Please check the console for more details.');
             }
         }
 
