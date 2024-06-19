@@ -25,7 +25,7 @@
         let session;
         async function loadModel() {
             try {
-                session = await ort.InferenceSession.create('yolov8n.onnx', {
+                session = await ort.InferenceSession.create('./yolov8n.onnx', {
                     executionProviders: ['wasm'],
                     wasmPaths: 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/'
                 });
