@@ -25,7 +25,10 @@
         let session;
         async function loadModel() {
             try {
-                session = await ort.InferenceSession.create('https://yolo8-jiechau-cf1a1d9f5819dd1c3282685592ff71577dd676408eac862ef.gitlab.io/yolov8n.onnx', {
+                const modelUrl = 'yolov8n.onnx'; // Model file should be in the same directory as index.html
+                console.log('Loading ONNX model from:', modelUrl);
+                
+                session = await ort.InferenceSession.create(modelUrl, {
                     executionProviders: ['wasm'],
                     wasmPaths: {
                         'ort-wasm.wasm': 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort-wasm.wasm',
@@ -34,7 +37,8 @@
                         'ort-wasm-simd-threaded.wasm': 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm'
                     }
                 });
-                console.log('ONNX model loaded');
+                
+                console.log('ONNX model loaded successfully');
             } catch (error) {
                 console.error('Error loading ONNX model:', error);
                 alert('Failed to load ONNX model. Please check the console for more details.');
