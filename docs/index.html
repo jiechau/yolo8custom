@@ -24,7 +24,8 @@
 
         async function loadModel() {
             try {
-                const modelUrl = 'yolov8n.onnx';
+                // const modelUrl = 'yolov8n.onnx';
+                const modelUrl = 'best.onnx';
                 console.log('Loading ONNX model from:', modelUrl);
 
                 session = await ort.InferenceSession.create(modelUrl, {
