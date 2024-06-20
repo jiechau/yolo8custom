@@ -16,8 +16,14 @@
     <div id="status"></div>
     <div id="debugInfo"></div>
     <script>
-        // Disable WebAssembly threads
-        ort.env.wasm.numThreads = 1;
+        // Check if cross-origin isolation is enabled
+        if (self.crossOriginIsolated) {
+            console.log("Cross-Origin Isolation is enabled.");
+            ort.env.wasm.numThreads = 2;
+        } else {
+            console.log("Cross-Origin Isolation is not enabled.");
+            ort.env.wasm.numThreads = 1;
+        }
 
         const canvasElement = document.getElementById('canvasElement');
         const ctx = canvasElement.getContext("2d");
@@ -33,6 +39,8 @@
         }
 
         updateDebugInfo('Script started');
+        updateDebugInfo(`Cross-Origin Isolation: ${self.crossOriginIsolated ? 'enabled' : 'disabled'}`);
+        updateDebugInfo(`WASM threads: ${ort.env.wasm.numThreads}`);
 
         // Check WebGL support
         function webGLIsAvailable() {
