@@ -36,7 +36,7 @@
       };
 
       const loadModel = async () => {
-        const session = await onnx.InferenceSession.create("./best.onnx");
+        const session = await onnx.loadModel("./best.onnx");
         return session;
       };
 
