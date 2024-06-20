@@ -16,6 +16,9 @@
     <div id="status"></div>
     <div id="debugInfo"></div>
     <script>
+        // Disable WebAssembly threads
+        ort.env.wasm.numThreads = 1;
+
         const canvasElement = document.getElementById('canvasElement');
         const ctx = canvasElement.getContext("2d");
         const statusElement = document.getElementById('status');
@@ -30,6 +33,18 @@
         }
 
         updateDebugInfo('Script started');
+
+        // Check WebGL support
+        function webGLIsAvailable() {
+            try {
+                const canvas = document.createElement('canvas');
+                return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+            } catch(e) {
+                return false;
+            }
+        }
+
+        updateDebugInfo(`WebGL is ${webGLIsAvailable() ? 'available' : 'not available'}`);
 
         // Get webcam feed
         navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } } })
