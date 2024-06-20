@@ -5,161 +5,157 @@
     <title>YOLOv8 Object Detection</title>
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
     <style>
-      canvas {
-          display: block;
-          border: 1px solid black;
-          margin-top: 10px;
-      }
+        canvas {
+            display: block;
+            border: 1px solid black;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
-    <button id="detectButton">Detect Objects</button>
     <canvas id="canvasElement" width="640" height="480"></canvas>
     <script>
-      const detectButton = document.getElementById('detectButton');
-      const canvasElement = document.getElementById('canvasElement');
-      const ctx = canvasElement.getContext("2d");
+        const canvasElement = document.getElementById('canvasElement');
+        const ctx = canvasElement.getContext("2d");
 
-      // Get webcam feed
-      navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
-          const videoElement = document.createElement('video');
-          videoElement.srcObject = stream;
-          videoElement.width = canvasElement.width;
-          videoElement.height = canvasElement.height;
-          videoElement.play();
+        // Get webcam feed
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                const videoElement = document.createElement('video');
+                videoElement.srcObject = stream;
+                videoElement.width = canvasElement.width;
+                videoElement.height = canvasElement.height;
+                videoElement.play();
 
-          detectButton.addEventListener("click", async () => {
-              detectButton.disabled = true; // Disable button during detection
+                videoElement.onloadeddata = async () => {
+                    const detectFrame = async () => {
+                        ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+                        const imageBlob = await new Promise(resolve => canvasElement.toBlob(resolve, 'image/jpeg'));
+                        const boxes = await detect_objects_on_image(imageBlob);
+                        draw_image_and_boxes(imageBlob, boxes);
 
-              const detectFrame = async () => {
-                ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
-                const imageBlob = await new Promise(resolve => canvasElement.toBlob(resolve, 'image/jpeg'));
-                const boxes = await detect_objects_on_image(imageBlob);
-                draw_image_and_boxes(imageBlob, boxes);
+                        requestAnimationFrame(detectFrame); // Detect objects in the next frame
+                    };
 
-                requestAnimationFrame(detectFrame); // Detect objects in the next frame
-              };
+                    detectFrame(); // Start detecting objects in frames
+                };
+            });
 
-              detectFrame(); // Start detecting objects in frames
-          });
-        });
+        function draw_image_and_boxes(file, boxes) {
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
+            img.onload = () => {
+                ctx.drawImage(img, 0, 0);
+                ctx.strokeStyle = "#00FF00";
+                ctx.lineWidth = 3;
+                ctx.font = "18px serif";
+                boxes.forEach(([x1, y1, x2, y2, label]) => {
+                    ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+                    ctx.fillStyle = "#00ff00";
+                    const width = ctx.measureText(label).width;
+                    ctx.fillRect(x1, y1, width + 10, 25);
+                    ctx.fillStyle = "#000000";
+                    ctx.fillText(label, x1, y1 + 18);
+                });
+            };
+        }
 
-      function draw_image_and_boxes(file, boxes) {
-          const img = new Image();
-          img.src = URL.createObjectURL(file);
-          img.onload = () => {
-              ctx.drawImage(img, 0, 0);
-              ctx.strokeStyle = "#00FF00";
-              ctx.lineWidth = 3;
-              ctx.font = "18px serif";
-              boxes.forEach(([x1, y1, x2, y2, label]) => {
-                  ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
-                  ctx.fillStyle = "#00ff00";
-                  const width = ctx.measureText(label).width;
-                  ctx.fillRect(x1, y1, width + 10, 25);
-                  ctx.fillStyle = "#000000";
-                  ctx.fillText(label, x1, y1 + 18);
-              });
-          };
-      }
+        async function detect_objects_on_image(buf) {
+            const [input, img_width, img_height] = await prepare_input(buf);
+            const output = await run_model(input);
+            return process_output(output, img_width, img_height);
+        }
 
-      async function detect_objects_on_image(buf) {
-          const [input, img_width, img_height] = await prepare_input(buf);
-          const output = await run_model(input);
-          return process_output(output, img_width, img_height);
-      }
+        async function prepare_input(buf) {
+            return new Promise(resolve => {
+                const img = new Image();
+                img.src = URL.createObjectURL(buf);
+                img.onload = () => {
+                    const [img_width, img_height] = [img.width, img.height];
+                    const tempCanvas = document.createElement("canvas");
+                    tempCanvas.width = 640;
+                    tempCanvas.height = 640;
+                    const context = tempCanvas.getContext("2d");
+                    context.drawImage(img, 0, 0, 640, 640);
+                    const imgData = context.getImageData(0, 0, 640, 640);
+                    const pixels = imgData.data;
 
-      async function prepare_input(buf) {
-          return new Promise(resolve => {
-              const img = new Image();
-              img.src = URL.createObjectURL(buf);
-              img.onload = () => {
-                  const [img_width, img_height] = [img.width, img.height];
-                  const tempCanvas = document.createElement("canvas");
-                  tempCanvas.width = 640;
-                  tempCanvas.height = 640;
-                  const context = tempCanvas.getContext("2d");
-                  context.drawImage(img, 0, 0, 640, 640);
-                  const imgData = context.getImageData(0, 0, 640, 640);
-                  const pixels = imgData.data;
+                    const red = [], green = [], blue = [];
+                    for (let index = 0; index < pixels.length; index += 4) {
+                        red.push(pixels[index] / 255.0);
+                        green.push(pixels[index + 1] / 255.0);
+                        blue.push(pixels[index + 2] / 255.0);
+                    }
+                    const input = [...red, ...green, ...blue];
+                    resolve([input, img_width, img_height]);
+                };
+            });
+        }
 
-                  const red = [], green = [], blue = [];
-                  for (let index = 0; index < pixels.length; index += 4) {
-                      red.push(pixels[index] / 255.0);
-                      green.push(pixels[index + 1] / 255.0);
-                      blue.push(pixels[index + 2] / 255.0);
-                  }
-                  const input = [...red, ...green, ...blue];
-                  resolve([input, img_width, img_height]);
-              };
-          });
-      }
+        const modelPromise = ort.InferenceSession.create("best.onnx");
 
-      const modelPromise = ort.InferenceSession.create("best.onnx");
+        async function run_model(input) {
+            const model = await modelPromise; // Use the pre-loaded model
+            input = new ort.Tensor(Float32Array.from(input), [1, 3, 640, 640]);
+            const outputs = await model.run({ images: input });
+            return outputs["output0"].data;
+        }
 
-      async function run_model(input) {
-          const model = await modelPromise; // Use the pre-loaded model
-          input = new ort.Tensor(Float32Array.from(input), [1, 3, 640, 640]);
-          const outputs = await model.run({ images: input });
-          return outputs["output0"].data;
-      }
+        function process_output(output, img_width, img_height) {
+            let boxes = [];
+            for (let index = 0; index < 8400; index++) {
+                const [class_id, prob] = [...Array(80).keys()]
+                    .map(col => [col, output[8400 * (col + 4) + index]])
+                    .reduce((accum, item) => item[1] > accum[1] ? item : accum, [0, 0]);
+                if (prob < 0.5) {
+                    continue;
+                }
+                const label = yolo_classes[class_id];
+                const xc = output[index];
+                const yc = output[8400 + index];
+                const w = output[2 * 8400 + index];
+                const h = output[3 * 8400 + index];
+                const x1 = (xc - w / 2) / 640 * img_width;
+                const y1 = (yc - h / 2) / 640 * img_height;
+                const x2 = (xc + w / 2) / 640 * img_width;
+                const y2 = (yc + h / 2) / 640 * img_height;
+                boxes.push([x1, y1, x2, y2, label, prob]);
+            }
 
-      function process_output(output, img_width, img_height) {
-          let boxes = [];
-          for (let index = 0; index < 8400; index++) {
-              const [class_id, prob] = [...Array(80).keys()]
-                  .map(col => [col, output[8400 * (col + 4) + index]])
-                  .reduce((accum, item) => item[1] > accum[1] ? item : accum, [0, 0]);
-              if (prob < 0.5) {
-                  continue;
-              }
-              const label = yolo_classes[class_id];
-              const xc = output[index];
-              const yc = output[8400 + index];
-              const w = output[2 * 8400 + index];
-              const h = output[3 * 8400 + index];
-              const x1 = (xc - w / 2) / 640 * img_width;
-              const y1 = (yc - h / 2) / 640 * img_height;
-              const x2 = (xc + w / 2) / 640 * img_width;
-              const y2 = (yc + h / 2) / 640 * img_height;
-              boxes.push([x1, y1, x2, y2, label, prob]);
-          }
+            boxes = boxes.sort((box1, box2) => box2[5] - box1[5]);
+            const result = [];
+            while (boxes.length > 0) {
+                result.push(boxes[0]);
+                boxes = boxes.filter(box => iou(boxes[0], box) < 0.7);
+            }
+            return result;
+        }
 
-          boxes = boxes.sort((box1, box2) => box2[5] - box1[5]);
-          const result = [];
-          while (boxes.length > 0) {
-              result.push(boxes[0]);
-              boxes = boxes.filter(box => iou(boxes[0], box) < 0.7);
-          }
-          return result;
-      }
+        function iou(box1, box2) {
+            return intersection(box1, box2) / union(box1, box2);
+        }
 
-      function iou(box1, box2) {
-          return intersection(box1, box2) / union(box1, box2);
-      }
+        function union(box1, box2) {
+            const [box1_x1, box1_y1, box1_x2, box1_y2] = box1;
+            const [box2_x1, box2_y1, box2_x2, box2_y2] = box2;
+            const box1_area = (box1_x2 - box1_x1) * (box1_y2 - box1_y1);
+            const box2_area = (box2_x2 - box2_x1) * (box2_y2 - box2_y1);
+            return box1_area + box2_area - intersection(box1, box2);
+        }
 
-      function union(box1, box2) {
-          const [box1_x1, box1_y1, box1_x2, box1_y2] = box1;
-          const [box2_x1, box2_y1, box2_x2, box2_y2] = box2;
-          const box1_area = (box1_x2 - box1_x1) * (box1_y2 - box1_y1);
-          const box2_area = (box2_x2 - box2_x1) * (box2_y2 - box2_y1);
-          return box1_area + box2_area - intersection(box1, box2);
-      }
+        function intersection(box1, box2) {
+            const [box1_x1, box1_y1, box1_x2, box1_y2] = box1;
+            const [box2_x1, box2_y1, box2_x2, box2_y2] = box2;
+            const x1 = Math.max(box1_x1, box2_x1);
+            const y1 = Math.max(box1_y1, box2_y1);
+            const x2 = Math.min(box1_x2, box2_x2);
+            const y2 = Math.min(box1_y2, box2_y2);
+            return (x2 - x1) * (y2 - y1);
+        }
 
-      function intersection(box1, box2) {
-          const [box1_x1, box1_y1, box1_x2, box1_y2] = box1;
-          const [box2_x1, box2_y1, box2_x2, box2_y2] = box2;
-          const x1 = Math.max(box1_x1, box2_x1);
-          const y1 = Math.max(box1_y1, box2_y1);
-          const x2 = Math.min(box1_x2, box2_x2);
-          const y2 = Math.min(box1_y2, box2_y2);
-          return (x2 - x1) * (y2 - y1);
-      }
-
-      const yolo_classes = [
-          'Female', 'Male'
-      ];
+        const yolo_classes = [
+            'Female', 'Male'
+        ];
     </script>
 </body>
 </html>
