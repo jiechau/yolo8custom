@@ -18,41 +18,31 @@
         const canvasElement = document.getElementById('canvasElement');
         const ctx = canvasElement.getContext("2d");
 
-        // Get all video input devices
-        navigator.mediaDevices.enumerateDevices().then(devices => {
-            const videoDevices = devices.filter(device => device.kind === 'videoinput');
-            const backCamera = videoDevices.find(device => device.label.toLowerCase().includes('back')) || videoDevices[0];
+        // Get webcam feed
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+            .then(stream => {
+                const videoElement = document.createElement('video');
+                videoElement.srcObject = stream;
+                videoElement.width = canvasElement.width;
+                videoElement.height = canvasElement.height;
+                videoElement.play();
 
-            if (backCamera) {
-                // Get webcam feed
-                navigator.mediaDevices.getUserMedia({ video: { deviceId: backCamera.deviceId } })
-                    .then(stream => {
-                        const videoElement = document.createElement('video');
-                        videoElement.srcObject = stream;
-                        videoElement.width = canvasElement.width;
-                        videoElement.height = canvasElement.height;
-                        videoElement.play();
+                videoElement.onloadeddata = async () => {
+                    const detectFrame = async () => {
+                        ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+                        const imageBlob = await new Promise(resolve => canvasElement.toBlob(resolve, 'image/jpeg'));
+                        const boxes = await detect_objects_on_image(imageBlob);
+                        draw_image_and_boxes(imageBlob, boxes);
 
-                        videoElement.onloadeddata = async () => {
-                            const detectFrame = async () => {
-                                ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
-                                const imageBlob = await new Promise(resolve => canvasElement.toBlob(resolve, 'image/jpeg'));
-                                const boxes = await detect_objects_on_image(imageBlob);
-                                draw_image_and_boxes(imageBlob, boxes);
+                        requestAnimationFrame(detectFrame); // Detect objects in the next frame
+                    };
 
-                                requestAnimationFrame(detectFrame); // Detect objects in the next frame
-                            };
-
-                            detectFrame(); // Start detecting objects in frames
-                        };
-                    })
-                    .catch(err => {
-                        console.error('Error accessing webcam: ', err);
-                    });
-            } else {
-                console.error('No back camera found.');
-            }
-        });
+                    detectFrame(); // Start detecting objects in frames
+                };
+            })
+            .catch(err => {
+                console.error('Error accessing webcam: ', err);
+            });
 
         function draw_image_and_boxes(file, boxes) {
             const img = new Image();
