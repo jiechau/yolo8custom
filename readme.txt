@@ -52,6 +52,9 @@ yolo task=detect mode=train model=yolov8n.pt imgsz=640 data=data.yaml epochs=200
 # after training, keep the best.pt
 cp ./runs/detect/yolov8n_custom4/weights/best.pt .
 
+# run some tests in colab
+https://colab.research.google.com/drive/1ggmINPfNywMUHgIDeWkBP0EbrxkaO7VI?usp=sharing
+
 
 ## 
 
@@ -75,6 +78,7 @@ clearml-init
 # https://learnopencv.com/train-yolov8-on-custom-dataset/
 # download pothole
 wget https://www.dropbox.com/s/qvglw8pqo16769f/pothole_dataset_v8.zip?dl=1
+# https://github.com/spmallick/learnopencv/blob/master/Train-YOLOv8-on-Custom-Dataset-A-Complete-Tutorial/yolov8_fine_tuning.ipynb
 
 # roboflow women-men
 https://universe.roboflow.com/generalstuff/women-men/dataset/1/download/yolov8
