@@ -38,7 +38,7 @@
 
       const loadModel = async () => {
         const modelPath = "./best.onnx";
-        const model = await onnx.loadModel(modelPath);
+        const model = await onnx.loadTensor(modelPath);
         session = await onnx.InferenceSession.create(model);
       };
 
