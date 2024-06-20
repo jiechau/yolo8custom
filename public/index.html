@@ -29,11 +29,12 @@
 
                 videoElement.onloadeddata = async () => {
                     const detectFrame = async () => {
-                        ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
-                        const imageBlob = await new Promise(resolve => canvasElement.toBlob(resolve, 'image/jpeg'));
-                        const boxes = await detect_objects_on_image(imageBlob);
-                        draw_image_and_boxes(imageBlob, boxes);
-
+                        if (videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
+                            ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+                            const imageBlob = await new Promise(resolve => canvasElement.toBlob(resolve, 'image/jpeg'));
+                            const boxes = await detect_objects_on_image(imageBlob);
+                            draw_image_and_boxes(imageBlob, boxes);
+                        }
                         requestAnimationFrame(detectFrame); // Detect objects in the next frame
                     };
 
