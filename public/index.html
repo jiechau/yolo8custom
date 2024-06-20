@@ -60,7 +60,7 @@
             const float32Data = preprocessImage(imageData);
             const input = new ort.Tensor('float32', float32Data, [1, 3, canvas.height, canvas.width]);
 
-            const feeds = { input: input };
+            const feeds = { images: input }; // Ensure 'images' matches the input name in your model
             const outputData = await session.run(feeds);
             const boxes = outputData.boxes.data;
             const scores = outputData.scores.data;
