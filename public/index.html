@@ -23,6 +23,7 @@
       const video = document.getElementById("video");
       const canvas = document.getElementById("canvas");
       const ctx = canvas.getContext("2d");
+      let session;
 
       const setupCamera = async () => {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -36,11 +37,12 @@
       };
 
       const loadModel = async () => {
-        const session = await onnx.loadModel("./best.onnx");
-        return session;
+        const modelPath = "./best.onnx";
+        const model = await onnx.loadModel(modelPath);
+        session = await onnx.InferenceSession.create(model);
       };
 
-      const detectObjects = async (session, imageData) => {
+      const detectObjects = async (imageData) => {
         const tensor = new onnx.Tensor(imageData.data, "uint8");
         const result = await session.run([tensor]);
         const boxes = result.boxes;
@@ -53,12 +55,14 @@
       const processFrame = async () => {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const session = await loadModel();
-        await detectObjects(session, imageData);
+        await detectObjects(imageData);
         requestAnimationFrame(processFrame);
       };
 
-      setupCamera().then(processFrame);
+      (async () => {
+        await loadModel();
+        setupCamera().then(processFrame);
+      })();
     </script>
   </body>
 </html>
