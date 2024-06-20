@@ -13,31 +13,49 @@
     </style>
 </head>
 <body>
-    <canvas id="canvasElement" width="640" height="480"></canvas>
+    <canvas id="canvasElement" width="320" height="240"></canvas>
+    <video id="videoElement" width="320" height="240" style="display: none;"></video> 
     <script>
         const canvasElement = document.getElementById('canvasElement');
         const ctx = canvasElement.getContext("2d");
+        const videoElement = document.getElementById('videoElement');
+        const FPS = 15;
+        let then = Date.now();
+        const interval = 1000 / FPS;
 
         // Get webcam feed
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: 320, height: 240 } })
             .then(stream => {
-                const videoElement = document.createElement('video');
                 videoElement.srcObject = stream;
-                videoElement.width = canvasElement.width;
-                videoElement.height = canvasElement.height;
                 videoElement.play();
 
                 videoElement.onloadeddata = async () => {
                     const detectFrame = async () => {
-                        ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
-                        const imageBlob = await new Promise(resolve => canvasElement.toBlob(resolve, 'image/jpeg'));
-                        const boxes = await detect_objects_on_image(imageBlob);
-                        draw_image_and_boxes(imageBlob, boxes);
+                        const now = Date.now();
+                        const elapsed = now - then;
+                        if (elapsed > interval) {
+                            ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+                            const imageBlob = await new Promise(resolve => canvasElement.toBlob(resolve, 'image/jpeg'));
 
-                        requestAnimationFrame(detectFrame); // Detect objects in the next frame
+                            // Use Web Worker (if available)
+                            if (window.Worker) {
+                                const worker = new Worker('worker.js'); // Path to your worker script
+                                worker.postMessage({ imageBlob });
+                                worker.onmessage = (e) => {
+                                    const boxes = e.data;
+                                    draw_image_and_boxes(imageBlob, boxes);
+                                };
+                            } else {
+                                // Fallback to main thread processing if Web Workers are not supported
+                                const boxes = await detect_objects_on_image(imageBlob);
+                                draw_image_and_boxes(imageBlob, boxes);
+                            }
+                            then = now - (elapsed % interval); 
+                        }
+                        requestAnimationFrame(detectFrame); 
                     };
 
-                    detectFrame(); // Start detecting objects in frames
+                    detectFrame(); 
                 };
             })
             .catch(err => {
@@ -65,8 +83,7 @@
                     ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
                     const width = ctx.measureText(label).width;
                     ctx.fillRect(x1, y1, width + 10, 25);
-                    ctx.fillStyle = "#000000";
-                    ctx.fillText(label, x1, y1 + 18);
+                    ctx.fillStyle = "#000000";ctx.fillText(label, x1, y1 + 18);
                 });
             };
         }
@@ -84,11 +101,11 @@
                 img.onload = () => {
                     const [img_width, img_height] = [img.width, img.height];
                     const tempCanvas = document.createElement("canvas");
-                    tempCanvas.width = 640;
-                    tempCanvas.height = 640;
+                    tempCanvas.width = 640; 
+                    tempCanvas.height = 640; 
                     const context = tempCanvas.getContext("2d");
-                    context.drawImage(img, 0, 0, 640, 640);
-                    const imgData = context.getImageData(0, 0, 640, 640);
+                    context.drawImage(img, 0, 0, 640, 640); 
+                    const imgData = context.getImageData(0, 0, 640, 640); 
                     const pixels = imgData.data;
 
                     const red = [], green = [], blue = [];
@@ -106,15 +123,15 @@
         const modelPromise = ort.InferenceSession.create("best.onnx");
 
         async function run_model(input) {
-            const model = await modelPromise; // Use the pre-loaded model
-            input = new ort.Tensor(Float32Array.from(input), [1, 3, 640, 640]);
+            const model = await modelPromise; 
+            input = new ort.Tensor(Float32Array.from(input), [1, 3, 640, 640]); 
             const outputs = await model.run({ images: input });
             return outputs["output0"].data;
         }
 
         function process_output(output, img_width, img_height) {
             let boxes = [];
-            for (let index = 0; 8400 > index; index++) {
+            for (let index = 0; 8400 > index; index++) { 
                 const [class_id, prob] = [...Array(80).keys()]
                     .map(col => [col, output[8400 * (col + 4) + index]])
                     .reduce((accum, item) => item[1] > accum[1] ? item : accum, [0, 0]);
@@ -133,11 +150,11 @@
                 boxes.push([x1, y1, x2, y2, label, prob]);
             }
 
-            boxes = boxes.sort((box1, box2) => box2[5] - box1[5]);
+            boxes = boxes.sort((box1, box2) => box2[5] - box1[5]); 
             const result = [];
             while (boxes.length > 0) {
                 result.push(boxes[0]);
-                boxes = boxes.filter(box => iou(boxes[0], box) < 0.7);
+                boxes = boxes.filter(box => iou(boxes[0], box) < 0.7); 
             }
             return result;
         }
