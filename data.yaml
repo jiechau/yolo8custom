@@ -1,0 +1,13 @@
+train: women-men/train/images
+val: women-men/valid/images
+test: women-men/test/images
+
+nc: 2
+names: ['Female', 'Male']
+
+roboflow:
+  workspace: generalstuff
+  project: women-men
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/generalstuff/women-men/dataset/1
