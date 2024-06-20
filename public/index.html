@@ -32,7 +32,10 @@
         }
 
         async function loadModel() {
-            session = await ort.InferenceSession.create('./best.onnx');
+            session = await ort.InferenceSession.create('./best.onnx', {
+                executionProviders: ['wasm'],
+                wasm: { numThreads: 2 }
+            });
         }
 
         async function runInference() {
@@ -43,7 +46,8 @@
 
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const input = new ort.Tensor('float32', imageData.data, [1, 3, canvas.height, canvas.width]);
+            const float32Data = new Float32Array(imageData.data);
+            const input = new ort.Tensor('float32', float32Data, [1, 3, canvas.height, canvas.width]);
 
             const feeds = { input: input };
             const outputData = await session.run(feeds);
