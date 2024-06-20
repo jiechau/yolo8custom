@@ -95,3 +95,6 @@ kaggle datasets download -d playlist/men-women-classification
 - [microsoft](https://microsoft.github.io/onnxjs-demo/#/)
 - [yolov8-tfjs](https://hyuto.github.io/yolov8-tfjs/)
 - [yolo-coco](https://reu2018dl.github.io/model_coco.html)
+
+# onnx js reference
+https://github.com/akbartus/Yolov8-Object-Detection-on-Browser/blob/main/yolov8_onnx_without_nms/index.html
