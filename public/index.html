@@ -39,8 +39,7 @@
       const loadModel = async () => {
         const modelPath = "./best.onnx";
         const modelData = await fetch(modelPath).then((res) => res.arrayBuffer());
-        const env = new onnx.Env();
-        session = await env.createInferenceSession({ bytearrayForModel: modelData });
+        session = await onnx.InferenceSession.create(modelData);
       };
 
       const detectObjects = async (imageData) => {
