@@ -1,0 +1,12 @@
+.DS_Store
+.idea/
+runs/
+*.swo
+*.ini
+*.bak
+*ipynb_checkpoints*
+*Untitled*
+*untitled*
+__pycache__/
+__pydummy__
+__pypackages__/
