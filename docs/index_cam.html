@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Webcam Frame Capture</title>
+    <title>YOLOv8 Object Detection with Image URL</title>
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
     <style>
-        #videoElement {
-            display: none;
-        }
         #outputArea {
             display: flex;
             justify-content: center;
@@ -20,111 +18,144 @@
     </style>
 </head>
 <body>
-    <h1>Webcam Frame Capture</h1>
+    <h1>YOLOv8 Object Detection with Image URL</h1>
     <div>
-        <input type="number" id="fpsInput" placeholder="Enter FPS" min="1" max="60">
-        <button onclick="setFPS()">Set FPS</button>
+        <input type="text" id="imageUrl" value="https://raw.githubusercontent.com/ultralytics/yolov5/master/data/images/bus.jpg">
+        <button onclick="runInference()">Submit</button>
     </div>
-    <video id="videoElement" autoplay playsinline></video>
     <div id="outputArea">
         <img id="latestFrame" width="640" height="640" />
     </div>
 
     <script>
-        let FPS = 10;
-        let videoElement, latestFrame, captureInterval;
+        const modelPromise = ort.InferenceSession.create("yolov8n.onnx");
 
-        document.addEventListener('DOMContentLoaded', () => {
-            videoElement = document.getElementById('videoElement');
-            latestFrame = document.getElementById('latestFrame');
-
-            initializeCamera();
-        });
-
-        async function initializeCamera() {
-            const constraints = {
-                video: {
-                    facingMode: { exact: "environment" }
-                }
-            };
-
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                videoElement.srcObject = stream;
-                videoElement.addEventListener('loadedmetadata', startCapture);
-            } catch (error) {
-                //console.error('Error accessing camera:', error);
-                // Fallback to any available camera if the rear camera is not available
-                try {
-                    const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
-                    videoElement.srcObject = fallbackStream;
-                    videoElement.addEventListener('loadedmetadata', startCapture);
-                } catch (fallbackError) {
-                    console.error('Error accessing any camera:', fallbackError);
-                }
-            }
-        }
-
-        function startCapture() {
-            captureInterval = setInterval(captureFrame, 1000 / FPS);
-        }
-
-        function captureFrame() {
+        async function runInference() {
+            const imageUrl = document.getElementById('imageUrl').value;
+            const latestFrame = document.getElementById('latestFrame');
+            const imageBlob = await fetch(imageUrl).then(res => res.blob());
+            const boxes = await detect_objects_on_image(imageBlob);
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            const aspectRatio = videoElement.videoWidth / videoElement.videoHeight;
+            const img = new Image();
 
-            let targetWidth, targetHeight;
-            if (aspectRatio > 1) {
-                targetWidth = 640;
-                targetHeight = 640 / aspectRatio;
-            } else {
-                targetHeight = 640;
-                targetWidth = 640 * aspectRatio;
+            img.onload = () => {
+                canvas.width = 640;
+                canvas.height = 640;
+                ctx.drawImage(img, 0, 0, 640, 640);
+                draw_boxes(boxes, ctx);
+                latestFrame.src = canvas.toDataURL('image/jpeg');
+            };
+            img.src = URL.createObjectURL(imageBlob);
+        }
+
+        function draw_boxes(boxes, ctx) {
+            ctx.lineWidth = 3;
+            ctx.font = "18px serif";
+            boxes.forEach(([x1, y1, x2, y2, label, confidence]) => {
+                ctx.strokeStyle = "green";
+                ctx.fillStyle = "green";
+                ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+                const text = `${label} ${confidence.toFixed(2)}`;
+                const width = ctx.measureText(text).width;
+                ctx.fillRect(x1, y1, width + 10, 25);
+                ctx.fillStyle = "#000000";
+                ctx.fillText(text, x1, y1 + 18);
+            });
+        }
+
+        async function detect_objects_on_image(buf) {
+            const [input, img_width, img_height] = await prepare_input(buf);
+            const output = await run_model(input);
+            return process_output(output, img_width, img_height);
+        }
+
+        async function prepare_input(buf) {
+            return new Promise(resolve => {
+                const img = new Image();
+                img.src = URL.createObjectURL(buf);
+                img.onload = () => {
+                    const [img_width, img_height] = [img.width, img.height];
+                    const canvas = document.createElement("canvas");
+                    canvas.width = 640;
+                    canvas.height = 640;
+                    const context = canvas.getContext("2d");
+                    context.drawImage(img, 0, 0, 640, 640);
+                    const imgData = context.getImageData(0, 0, 640, 640);
+                    const pixels = imgData.data;
+
+                    const red = [], green = [], blue = [];
+                    for (let index = 0; index < pixels.length; index += 4) {
+                        red.push(pixels[index] / 255.0);
+                        green.push(pixels[index + 1] / 255.0);
+                        blue.push(pixels[index + 2] / 255.0);
+                    }
+                    const input = [...red, ...green, ...blue];
+                    resolve([input, img_width, img_height]);
+                };
+            });
+        }
+
+        async function run_model(input) {
+            const model = await modelPromise;
+            input = new ort.Tensor(Float32Array.from(input), [1, 3, 640, 640]);
+            const outputs = await model.run({ images: input });
+            return outputs["output0"].data;
+        }
+
+        function process_output(output, img_width, img_height) {
+            let boxes = [];
+            for (let index = 0; 8400 > index; index++) {
+                const [class_id, prob] = [...Array(80).keys()]
+                    .map(col => [col, output[8400 * (col + 4) + index]])
+                    .reduce((accum, item) => item[1] > accum[1] ? item : accum, [0, 0]);
+                if (prob < 0.5) {
+                    continue;
+                }
+                const label = yolo_classes[class_id];
+                const xc = output[index];
+                const yc = output[8400 + index];
+                const w = output[2 * 8400 + index];
+                const h = output[3 * 8400 + index];
+                const x1 = (xc - w / 2) / 640 * img_width;
+                const y1 = (yc - h / 2) / 640 * img_height;
+                const x2 = (xc + w / 2) / 640 * img_width;
+                const y2 = (yc + h / 2) / 640 * img_height;
+                boxes.push([x1, y1, x2, y2, label, prob]);
             }
 
-            canvas.width = 640;
-            canvas.height = 640;
-
-            const xOffset = (640 - targetWidth) / 2;
-            const yOffset = (640 - targetHeight) / 2;
-
-            ctx.drawImage(videoElement, xOffset, yOffset, targetWidth, targetHeight);
-
-            // here
-            // Add text 'jiechau' in red color at the center of the picture
-            ctx.fillStyle = 'red';
-            ctx.font = '48px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('jiechau', canvas.width / 2, canvas.height / 2);
-            // end here
-
-            latestFrame.src = canvas.toDataURL('image/jpeg');
-        }
-
-        function setFPS() {
-            const fpsInput = document.getElementById('fpsInput');
-            const newFPS = parseFloat(fpsInput.value);
-
-            FPS = newFPS;
-            updateFPS();
-
-            /*
-            if (newFPS > 0 && newFPS <= 60) {
-                FPS = newFPS;
-                updateFPS();
-            } else {
-                alert('Please enter a valid FPS value between 1 and 60.');
+            boxes = boxes.sort((box1, box2) => box2[5] - box1[5]);
+            const result = [];
+            while (boxes.length > 0) {
+                result.push(boxes[0]);
+                boxes = boxes.filter(box => iou(boxes[0], box) < 0.7);
             }
-            */
+            return result;
         }
 
-        function updateFPS() {
-            clearInterval(captureInterval);
-            startCapture();
+        function iou(box1, box2) {
+            return intersection(box1, box2) / union(box1, box2);
         }
 
+        function union(box1, box2) {
+            const [box1_x1, box1_y1, box1_x2, box1_y2] = box1;
+            const [box2_x1, box2_y1, box2_x2, box2_y2] = box2;
+            const box1_area = (box1_x2 - box1_x1) * (box1_y1 - box1_y2);
+            const box2_area = (box2_x2 - box2_x1) * (box2_y1 - box2_y2);
+            return box1_area + box2_area - intersection(box1, box2);
+        }
+
+        function intersection(box1, box2) {
+            const [box1_x1, box1_y1, box1_x2, box1_y2] = box1;
+            const [box2_x1, box2_y1, box2_x2, box2_y2] = box2;
+            const x1 = Math.max(box1_x1, box2_x1);
+            const y1 = Math.max(box1_y1, box2_y1);
+            const x2 = Math.min(box1_x2, box2_x2);
+            const y2 = Math.min(box1_y2, box2_y2);
+            return (x2 - x1) * (y2 - y1);
+        }
+
+        const yolo_classes = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'];
     </script>
 </body>
 </html>
