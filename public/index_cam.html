@@ -3,97 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Webcam Frame Capture</title>
+    <title>Webcam Capture</title>
     <style>
-        #videoElement {
-            display: none;
-        }
-        #outputArea {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .frame {
-            border: 1px solid #ccc;
+        #output img {
+            max-width: 100%;
+            height: auto;
         }
     </style>
 </head>
 <body>
-    <h1>Webcam Frame Capture</h1>
-    <video id="videoElement" autoplay playsinline></video>
-    <div id="outputArea"></div>
+    <h1>Webcam Capture</h1>
+    <video id="video" autoplay style="display:none;"></video>
+    <div id="output"></div>
 
     <script>
+        let video = document.getElementById('video');
+        let output = document.getElementById('output');
         let FPS = 10;
-        let videoElement, outputArea, captureInterval;
+        let intervalId;
 
-        document.addEventListener('DOMContentLoaded', () => {
-            videoElement = document.getElementById('videoElement');
-            outputArea = document.getElementById('outputArea');
-
-            initializeWebcam();
-        });
-
-        async function initializeWebcam() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                videoElement.srcObject = stream;
-                videoElement.addEventListener('loadedmetadata', startCapture);
-            } catch (error) {
-                console.error('Error accessing webcam:', error);
-            }
-        }
-
-        function startCapture() {
-            captureInterval = setInterval(captureFrame, 1000 / FPS);
+        function startVideo() {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    video.srcObject = stream;
+                })
+                .catch(err => {
+                    console.error("Error accessing the camera: " + err);
+                });
         }
 
         function captureFrame() {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const aspectRatio = videoElement.videoWidth / videoElement.videoHeight;
+            let canvas = document.createElement('canvas');
+            let ctx = canvas.getContext('2d');
+            let width = video.videoWidth;
+            let height = video.videoHeight;
 
-            let targetWidth, targetHeight;
-            if (aspectRatio > 1) {
-                targetWidth = 640;
-                targetHeight = 640 / aspectRatio;
+            if (width > height) {
+                canvas.width = 640;
+                canvas.height = 640 * (height / width);
             } else {
-                targetHeight = 640;
-                targetWidth = 640 * aspectRatio;
+                canvas.width = 640 * (width / height);
+                canvas.height = 640;
             }
 
-            canvas.width = 640;
-            canvas.height = 640;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            const xOffset = (640 - targetWidth) / 2;
-            const yOffset = (640 - targetHeight) / 2;
-
-            ctx.drawImage(videoElement, xOffset, yOffset, targetWidth, targetHeight);
-
-            const img = document.createElement('img');
-            img.src = canvas.toDataURL('image/jpeg');
+            let img = document.createElement('img');
+            img.src = canvas.toDataURL('image/png');
             img.className = 'frame';
-            img.width = 160; // Display smaller images for better visibility
-            img.height = 160;
 
-            outputArea.prepend(img);
-
-            // Remove old frames if there are too many
-            while (outputArea.children.length > FPS * 5) {
-                outputArea.removeChild(outputArea.lastChild);
+            // Remove the previous frame if it exists
+            if (output.firstChild) {
+                output.removeChild(output.firstChild);
             }
+
+            output.appendChild(img);
         }
 
-        // Allow changing FPS from the console
+        function updateFPS() {
+            clearInterval(intervalId);
+            intervalId = setInterval(captureFrame, 1000 / FPS);
+        }
+
+        startVideo();
+        updateFPS();
+
+        // Allow changing FPS via the console
         Object.defineProperty(window, 'FPS', {
-            get: () => FPS,
-            set: (value) => {
-                FPS = value;
-                clearInterval(captureInterval);
-                startCapture();
-                console.log(`FPS set to ${FPS}`);
+            set(value) {
+                if (typeof value === 'number' && value > 0) {
+                    FPS = value;
+                    updateFPS();
+                } else {
+                    console.error("FPS must be a positive number");
+                }
+            },
+            get() {
+                return FPS;
             }
         });
+
     </script>
 </body>
 </html>
