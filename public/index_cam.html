@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webcam Capture</title>
+    <style>
+        #output {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .frame {
+            border: 1px solid #ddd;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Webcam Capture</h1>
+    <video id="video" autoplay style="display:none;"></video>
+    <div id="output"></div>
+
+    <script>
+        let video = document.getElementById('video');
+        let output = document.getElementById('output');
+        let FPS = 10;
+
+        function startVideo() {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    video.srcObject = stream;
+                })
+                .catch(err => {
+                    console.error("Error accessing the camera: " + err);
+                });
+        }
+
+        function captureFrame() {
+            let canvas = document.createElement('canvas');
+            let ctx = canvas.getContext('2d');
+            let width = video.videoWidth;
+            let height = video.videoHeight;
+
+            if (width > height) {
+                canvas.width = 640;
+                canvas.height = 640 * (height / width);
+            } else {
+                canvas.width = 640 * (width / height);
+                canvas.height = 640;
+            }
+
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            let img = document.createElement('img');
+            img.src = canvas.toDataURL('image/png');
+            img.className = 'frame';
+            output.appendChild(img);
+
+            // Limit the number of frames shown
+            if (output.children.length > FPS * 5) {
+                output.removeChild(output.firstChild);
+            }
+        }
+
+        function updateFPS() {
+            setInterval(captureFrame, 1000 / FPS);
+        }
+
+        startVideo();
+        updateFPS();
+
+        // Allow changing FPS via the console
+        Object.defineProperty(window, 'FPS', {
+            set(value) {
+                if (typeof value === 'number' && value > 0) {
+                    FPS = value;
+                    clearInterval();
+                    updateFPS();
+                } else {
+                    console.error("FPS must be a positive number");
+                }
+            },
+            get() {
+                return FPS;
+            }
+        });
+
+    </script>
+</body>
+</html>

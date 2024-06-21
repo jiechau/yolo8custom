@@ -51,7 +51,7 @@
                 ctx.drawImage(img, 0, 0);
                 ctx.lineWidth = 3;
                 ctx.font = "18px serif";
-                boxes.forEach(([x1, y1, x2, y2, label]) => {
+                boxes.forEach(([x1, y1, x2, y2, label, confidence]) => {
                     if (label === 'Male') {
                         ctx.strokeStyle = "blue";
                         ctx.fillStyle = "blue";
@@ -63,10 +63,12 @@
                         ctx.fillStyle = "#00FF00";
                     }
                     ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
-                    const width = ctx.measureText(label).width;
+                    const text = `${label} ${confidence.toFixed(2)}`;
+                    const width = ctx.measureText(text).width;
                     ctx.fillRect(x1, y1, width + 10, 25);
                     ctx.fillStyle = "#000000";
-                    ctx.fillText(label, x1, y1 + 18);
+
+                    ctx.fillText(text, x1, y1 + 18);
                 });
             };
         }
