@@ -29,23 +29,19 @@
 
                 videoElement.onloadeddata = async () => {
                     const detectFrame = async () => {
-                        try {
-                            ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
-                            const imageBlob = await new Promise(resolve => canvasElement.toBlob(resolve, 'image/jpeg'));
-                            const boxes = await detect_objects_on_image(imageBlob);
-                            draw_image_and_boxes(imageBlob, boxes);
+                        ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+                        const imageBlob = await new Promise(resolve => canvasElement.toBlob(resolve, 'image/jpeg'));
+                        const boxes = await detect_objects_on_image(imageBlob);
+                        draw_image_and_boxes(imageBlob, boxes);
 
-                            requestAnimationFrame(detectFrame); // Detect objects in the next frame
-                        } catch (error) {
-                            console.error('Error during frame detection:', error);
-                        }
+                        requestAnimationFrame(detectFrame); // Detect objects in the next frame
                     };
 
                     detectFrame(); // Start detecting objects in frames
                 };
             })
             .catch(err => {
-                console.error('Error accessing webcam:', err);
+                console.error('Error accessing webcam: ', err);
             });
 
         function draw_image_and_boxes(file, boxes) {
@@ -55,7 +51,7 @@
                 ctx.drawImage(img, 0, 0);
                 ctx.lineWidth = 3;
                 ctx.font = "18px serif";
-                boxes.forEach(([x1, y1, x2, y2, label, confidence]) => {
+                boxes.forEach(([x1, y1, x2, y2, label]) => {
                     if (label === 'Male') {
                         ctx.strokeStyle = "blue";
                         ctx.fillStyle = "blue";
@@ -67,11 +63,10 @@
                         ctx.fillStyle = "#00FF00";
                     }
                     ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
-                    const text = `${label} ${confidence.toFixed(2)}`;
-                    const width = ctx.measureText(text).width;
+                    const width = ctx.measureText(label).width;
                     ctx.fillRect(x1, y1, width + 10, 25);
                     ctx.fillStyle = "#000000";
-                    ctx.fillText(text, x1, y1 + 18);
+                    ctx.fillText(label, x1, y1 + 18);
                 });
             };
         }
@@ -154,8 +149,8 @@
         function union(box1, box2) {
             const [box1_x1, box1_y1, box1_x2, box1_y2] = box1;
             const [box2_x1, box2_y1, box2_x2, box2_y2] = box2;
-            const box1_area = (box1_x2 - box1_x1) * (box1_y1 - box1_y1);
-            const box2_area = (box2_x2 - box2_x1) * (box2_y2 - box2_y2);
+            const box1_area = (box1_x2 - box1_x1) * (box1_y2 - box1_y1);
+            const box2_area = (box2_x2 - box2_x1) * (box2_y2 - box2_y1);
             return box1_area + box2_area - intersection(box1, box2);
         }
 
