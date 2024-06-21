@@ -21,6 +21,10 @@
 </head>
 <body>
     <h1>Webcam Frame Capture</h1>
+    <div>
+        <input type="number" id="fpsInput" placeholder="Enter FPS" min="1" max="60">
+        <button onclick="setFPS()">Set FPS</button>
+    </div>
     <video id="videoElement" autoplay playsinline></video>
     <div id="outputArea">
         <img id="latestFrame" width="640" height="640" />
@@ -90,23 +94,28 @@
             latestFrame.src = canvas.toDataURL('image/jpeg');
         }
 
+        function setFPS() {
+            const fpsInput = document.getElementById('fpsInput');
+            const newFPS = parseFloat(fpsInput.value);
+
+            FPS = newFPS;
+            updateFPS();
+
+            /*
+            if (newFPS > 0 && newFPS <= 60) {
+                FPS = newFPS;
+                updateFPS();
+            } else {
+                alert('Please enter a valid FPS value between 1 and 60.');
+            }
+            */
+        }
+
         function updateFPS() {
             clearInterval(captureInterval);
             startCapture();
         }
 
-        /*
-        // Allow changing FPS from the console
-        Object.defineProperty(window, 'FPS', {
-            get: () => FPS,
-            set: (value) => {
-                FPS = value;
-                clearInterval(captureInterval);
-                startCapture();
-                console.log(`FPS set to ${FPS}`);
-            }
-        });
-        */
     </script>
 </body>
 </html>
