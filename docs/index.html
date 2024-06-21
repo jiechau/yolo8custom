@@ -3,79 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Webcam Capture with ONNX Inference</title>
+    <title>YOLOv8 Object Detection with Webcam</title>
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
     <style>
-        canvas {
+        #outputCanvas {
+            border: 1px solid #ccc;
             display: block;
-            border: 1px solid black;
-            margin-top: 10px;
+            margin: 20px auto;
         }
     </style>
 </head>
 <body>
-    <h1>Webcam Capture with ONNX Inference</h1>
-    <video id="video" autoplay style="display:none;"></video>
-    <canvas id="canvasElement" width="640" height="640"></canvas>
+    <h1>YOLOv8 Object Detection with Webcam</h1>
+    <canvas id="outputCanvas" width="640" height="640"></canvas>
 
     <script>
-        const video = document.getElementById('video');
-        const canvasElement = document.getElementById('canvasElement');
-        const ctx = canvasElement.getContext("2d");
         let FPS = 10;
-        let intervalId;
+        let videoElement, outputCanvas, ctx, captureInterval;
         const modelPromise = ort.InferenceSession.create("best.onnx");
 
-        function startVideo() {
-            navigator.mediaDevices.getUserMedia({
-                video: { facingMode: { exact: "environment" } }
-            })
-            .then(stream => {
-                video.srcObject = stream;
-            })
-            .catch(err => {
-                console.error("Error accessing the camera: " + err);
-            });
-        }
+        document.addEventListener('DOMContentLoaded', () => {
+            outputCanvas = document.getElementById('outputCanvas');
+            ctx = outputCanvas.getContext('2d');
+            initializeCamera();
+        });
 
-        async function captureFrame() {
-            ctx.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
-            const imageBlob = await new Promise(resolve => canvasElement.toBlob(resolve, 'image/jpeg'));
-            const boxes = await detect_objects_on_image(imageBlob);
-            draw_image_and_boxes(imageBlob, boxes);
-        }
-
-        function updateFPS() {
-            clearInterval(intervalId);
-            intervalId = setInterval(captureFrame, 1000 / FPS);
-        }
-
-        function draw_image_and_boxes(file, boxes) {
-            const img = new Image();
-            img.src = URL.createObjectURL(file);
-            img.onload = () => {
-                ctx.drawImage(img, 0, 0);
-                ctx.lineWidth = 3;
-                ctx.font = "18px serif";
-                boxes.forEach(([x1, y1, x2, y2, label, confidence]) => {
-                    if (label === 'Male') {
-                        ctx.strokeStyle = "blue";
-                        ctx.fillStyle = "blue";
-                    } else if (label === 'Female') {
-                        ctx.strokeStyle = "red";
-                        ctx.fillStyle = "red";
-                    } else {
-                        ctx.strokeStyle = "#00FF00";
-                        ctx.fillStyle = "#00FF00";
-                    }
-                    ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
-                    const text = `${label} ${confidence.toFixed(2)}`;
-                    const width = ctx.measureText(text).width;
-                    ctx.fillRect(x1, y1, width + 10, 25);
-                    ctx.fillStyle = "#000000";
-                    ctx.fillText(text, x1, y1 + 18);
-                });
+        async function initializeCamera() {
+            const constraints = {
+                video: {
+                    facingMode: { exact: "environment" },
+                    width: { ideal: 640 },
+                    height: { ideal: 640 }
+                }
             };
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                videoElement = document.createElement('video');
+                videoElement.srcObject = stream;
+                videoElement.width = 640;
+                videoElement.height = 640;
+                videoElement.play();
+                videoElement.addEventListener('loadedmetadata', startCapture);
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                try {
+                    const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    videoElement = document.createElement('video');
+                    videoElement.srcObject = fallbackStream;
+                    videoElement.width = 640;
+                    videoElement.height = 640;
+                    videoElement.play();
+                    videoElement.addEventListener('loadedmetadata', startCapture);
+                } catch (fallbackError) {
+                    console.error('Error accessing any camera:', fallbackError);
+                }
+            }
+        }
+
+        function startCapture() {
+            captureInterval = setInterval(captureAndProcessFrame, 1000 / FPS);
+        }
+
+        async function captureAndProcessFrame() {
+            ctx.drawImage(videoElement, 0, 0, outputCanvas.width, outputCanvas.height);
+            const imageBlob = await new Promise(resolve => outputCanvas.toBlob(resolve, 'image/jpeg'));
+            const boxes = await detect_objects_on_image(imageBlob);
+            draw_boxes(boxes);
+        }
+
+        function draw_boxes(boxes) {
+            ctx.lineWidth = 3;
+            ctx.font = "18px serif";
+            boxes.forEach(([x1, y1, x2, y2, label, confidence]) => {
+                if (label === 'Male') {
+                    ctx.strokeStyle = "blue";
+                    ctx.fillStyle = "blue";
+                } else if (label === 'Female') {
+                    ctx.strokeStyle = "red";
+                    ctx.fillStyle = "red";
+                } else {
+                    ctx.strokeStyle = "#00FF00";
+                    ctx.fillStyle = "#00FF00";
+                }
+                ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+                const text = `${label} ${confidence.toFixed(2)}`;
+                const width = ctx.measureText(text).width;
+                ctx.fillRect(x1, y1, width + 10, 25);
+                ctx.fillStyle = "#000000";
+                ctx.fillText(text, x1, y1 + 18);
+            });
         }
 
         async function detect_objects_on_image(buf) {
@@ -90,10 +107,10 @@
                 img.src = URL.createObjectURL(buf);
                 img.onload = () => {
                     const [img_width, img_height] = [img.width, img.height];
-                    const tempCanvas = document.createElement("canvas");
-                    tempCanvas.width = 640;
-                    tempCanvas.height = 640;
-                    const context = tempCanvas.getContext("2d");
+                    const canvas = document.createElement("canvas");
+                    canvas.width = 640;
+                    canvas.height = 640;
+                    const context = canvas.getContext("2d");
                     context.drawImage(img, 0, 0, 640, 640);
                     const imgData = context.getImageData(0, 0, 640, 640);
                     const pixels = imgData.data;
@@ -154,7 +171,7 @@
         function union(box1, box2) {
             const [box1_x1, box1_y1, box1_x2, box1_y2] = box1;
             const [box2_x1, box2_y1, box2_x2, box2_y2] = box2;
-            const box1_area = (box1_x2 - box1_x1) * (box1_y1 - box1_y1);
+            const box1_area = (box1_x2 - box1_x1) * (box1_y2 - box1_y1);
             const box2_area = (box2_x2 - box2_x1) * (box2_y2 - box2_y1);
             return box1_area + box2_area - intersection(box1, box2);
         }
@@ -169,25 +186,16 @@
             return (x2 - x1) * (y2 - y1);
         }
 
-        const yolo_classes = [
-            'Female', 'Male'
-        ];
+        const yolo_classes = ['Female', 'Male'];
 
-        startVideo();
-        updateFPS();
-
-        // Allow changing FPS via the console
+        // Allow changing FPS from the console
         Object.defineProperty(window, 'FPS', {
-            set(value) {
-                if (typeof value === 'number' && value > 0) {
-                    FPS = value;
-                    updateFPS();
-                } else {
-                    console.error("FPS must be a positive number");
-                }
-            },
-            get() {
-                return FPS;
+            get: () => FPS,
+            set: (value) => {
+                FPS = value;
+                clearInterval(captureInterval);
+                startCapture();
+                console.log(`FPS set to ${FPS}`);
             }
         });
     </script>
