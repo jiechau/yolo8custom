@@ -1,5 +1,9 @@
+
+
+
+
 - [gitlab page onnx](https://jiechau.gitlab.io/yolo8custom/index_onnx.html)
-- [gitlab page cam](https://jiechau.gitlab.io/yolo8custom/index_cam.html)
+- [gitlab page camera](https://jiechau.gitlab.io/yolo8custom/index_camera.html)
 - [gitlab page index](https://jiechau.gitlab.io/yolo8custom/index.html)
 - [github page index](https://jiechau.github.io/yolo8custom/index.html)
 

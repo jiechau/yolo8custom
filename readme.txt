@@ -1,7 +1,18 @@
-# ref
-https://learnopencv.com/train-yolov8-on-custom-dataset/
+## ref
 
-## 
+- [gitlab page onnx](https://jiechau.gitlab.io/yolo8custom/index_onnx.html)
+- [gitlab page camera](https://jiechau.gitlab.io/yolo8custom/index_camera.html)
+- [gitlab page index](https://jiechau.gitlab.io/yolo8custom/index.html)
+- [github page index](https://jiechau.github.io/yolo8custom/index.html)
+
+
+- [microsoft](https://microsoft.github.io/onnxjs-demo/#/)
+- [yolov8-tfjs](https://hyuto.github.io/yolov8-tfjs/)
+- [yolo-coco](https://reu2018dl.github.io/model_coco.html)
+
+
+
+## basic
 
 # basic
 https://docs.ultralytics.com/zh/models/
@@ -10,6 +21,9 @@ https://docs.ultralytics.com/zh/models/
 https://docs.ultralytics.com/modes/train/
 
 
+
+
+## train your own datasets
 
 # set up env
 /usr/local/bin/python3.9 -m venv --system-site-packages py39yolo8custom
@@ -71,7 +85,7 @@ clearml-init
 
 
 
-##
+## datasets
 
 # some other dataset and reference:
 
@@ -98,3 +112,9 @@ kaggle datasets download -d playlist/men-women-classification
 
 # onnx js reference
 https://github.com/akbartus/Yolov8-Object-Detection-on-Browser/blob/main/yolov8_onnx_without_nms/index.html
+
+
+
+# ref
+https://learnopencv.com/train-yolov8-on-custom-dataset/
+
