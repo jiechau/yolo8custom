@@ -90,14 +90,14 @@
             // here
             const imageBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
             const boxes = await detect_objects_on_image(imageBlob);
-            draw_boxes(boxes);
+            draw_boxes(boxes, ctx);
             // end here
 
             latestFrame.src = canvas.toDataURL('image/jpeg');
 
         }
 
-        function draw_boxes(boxes) {
+        function draw_boxes(boxes, ctx) {
             ctx.lineWidth = 3;
             ctx.font = "18px serif";
             boxes.forEach(([x1, y1, x2, y2, label, confidence]) => {
