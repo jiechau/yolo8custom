@@ -24,7 +24,7 @@
             'scissors', 'teddy bear', 'hair drier', 'toothbrush'
         ];
 
-        const url = 'https://img.shopping.friday.tw/images/product/289/8686719/8686719_3_1.webp';  // Replace with the actual image URL
+        url = 'https://img.shopping.friday.tw/images/product/289/8686719/8686719_3_1.webp';  // Replace with the actual image URL
 
         async function loadModel() {
             const session = await ort.InferenceSession.create('./yolov8n.onnx');
