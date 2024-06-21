@@ -40,66 +40,107 @@
         async function runInference(session, image, canvasId) {
             const canvas = document.getElementById(canvasId);
             const ctx = canvas.getContext('2d');
-            const inputSize = 640;
-            
-            // Resize image to 640x640
-            const resizedCanvas = document.createElement('canvas');
-            const resizedCtx = resizedCanvas.getContext('2d');
-            resizedCanvas.width = inputSize;
-            resizedCanvas.height = inputSize;
-            resizedCtx.drawImage(image, 0, 0, inputSize, inputSize);
-            const imageData = resizedCtx.getImageData(0, 0, inputSize, inputSize);
-            const data = imageData.data;
-
-            // Convert to float32 and normalize
-            const input = new Float32Array(inputSize * inputSize * 3);
-            for (let i = 0; i < inputSize * inputSize; i++) {
-                input[i * 3] = data[i * 4] / 255.0;       // R
-                input[i * 3 + 1] = data[i * 4 + 1] / 255.0; // G
-                input[i * 3 + 2] = data[i * 4 + 2] / 255.0; // B
-            }
-
-            const tensor = new ort.Tensor('float32', input, [1, 3, inputSize, inputSize]);
-            const feeds = { 'images': tensor };
-            const results = await session.run(feeds);
-
-            // Log the keys of the output to identify the correct key
-            console.log('Inference results:', results);
-            
-            // Assuming the key of the output is 'output' (update if different)
-            const output = results[Object.keys(results)[0]].data;
-
-            // Draw the original image on the output canvas
-            canvas.width = image.width;
-            canvas.height = image.height;
-            ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-            // Draw bounding boxes on the output canvas
-            drawBoundingBoxes(ctx, output, image.width / inputSize, image.height / inputSize);
+            const [input, imgWidth, imgHeight] = await prepareInput(image);
+            const output = await runModel(session, input);
+            const boxes = processOutput(output, imgWidth, imgHeight);
+            drawBoxes(ctx, image, boxes);
         }
 
-        function drawBoundingBoxes(ctx, output, scaleX, scaleY) {
-            const boxes = output.filter((_, index) => index % 6 < 4);
-            const scores = output.filter((_, index) => index % 6 === 4);
-            const classes = output.filter((_, index) => index % 6 === 5);
+        async function prepareInput(image) {
+            return new Promise(resolve => {
+                const imgWidth = image.width;
+                const imgHeight = image.height;
+                const canvas = document.createElement('canvas');
+                canvas.width = 640;
+                canvas.height = 640;
+                const context = canvas.getContext('2d');
+                context.drawImage(image, 0, 0, 640, 640);
+                const imgData = context.getImageData(0, 0, 640, 640);
+                const pixels = imgData.data;
 
-            for (let i = 0; i < boxes.length; i += 4) {
-                const x = boxes[i] * scaleX;
-                const y = boxes[i + 1] * scaleY;
-                const width = (boxes[i + 2] - boxes[i]) * scaleX;
-                const height = (boxes[i + 3] - boxes[i + 1]) * scaleY;
-                const score = scores[Math.floor(i / 4)];
-                const classId = classes[Math.floor(i / 4)];
-
-                if (score > 0.5) {
-                    ctx.strokeStyle = 'red';
-                    ctx.lineWidth = 2;
-                    ctx.strokeRect(x, y, width, height);
-                    ctx.font = '18px Arial';
-                    ctx.fillStyle = 'red';
-                    ctx.fillText(`${classNames[classId]}: ${score.toFixed(2)}`, x, y > 10 ? y - 5 : 10);
+                const red = [], green = [], blue = [];
+                for (let index = 0; index < pixels.length; index += 4) {
+                    red.push(pixels[index] / 255.0);
+                    green.push(pixels[index + 1] / 255.0);
+                    blue.push(pixels[index + 2] / 255.0);
                 }
+                const input = [...red, ...green, ...blue];
+                resolve([input, imgWidth, imgHeight]);
+            });
+        }
+
+        async function runModel(session, input) {
+            const tensor = new ort.Tensor('float32', Float32Array.from(input), [1, 3, 640, 640]);
+            const outputs = await session.run({ images: tensor });
+            return outputs[Object.keys(outputs)[0]].data;
+        }
+
+        function processOutput(output, imgWidth, imgHeight) {
+            let boxes = [];
+            for (let index = 0; 8400 > index; index++) {
+                const [classId, prob] = [...Array(80).keys()]
+                    .map(col => [col, output[8400 * (col + 4) + index]])
+                    .reduce((accum, item) => item[1] > accum[1] ? item : accum, [0, 0]);
+                if (prob < 0.5) {
+                    continue;
+                }
+                const label = classNames[classId];
+                const xc = output[index];
+                const yc = output[8400 + index];
+                const w = output[2 * 8400 + index];
+                const h = output[3 * 8400 + index];
+                const x1 = (xc - w / 2) / 640 * imgWidth;
+                const y1 = (yc - h / 2) / 640 * imgHeight;
+                const x2 = (xc + w / 2) / 640 * imgWidth;
+                const y2 = (yc + h / 2) / 640 * imgHeight;
+                boxes.push([x1, y1, x2, y2, label, prob]);
             }
+
+            boxes = boxes.sort((box1, box2) => box2[5] - box1[5]);
+            const result = [];
+            while (boxes.length > 0) {
+                result.push(boxes[0]);
+                boxes = boxes.filter(box => iou(boxes[0], box) < 0.7);
+            }
+            return result;
+        }
+
+        function drawBoxes(ctx, image, boxes) {
+            ctx.drawImage(image, 0, 0, image.width, image.height);
+            ctx.lineWidth = 3;
+            ctx.font = "18px serif";
+            boxes.forEach(([x1, y1, x2, y2, label, confidence]) => {
+                ctx.strokeStyle = "red";
+                ctx.fillStyle = "red";
+                ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+                const text = `${label} ${confidence.toFixed(2)}`;
+                const width = ctx.measureText(text).width;
+                ctx.fillRect(x1, y1, width + 10, 25);
+                ctx.fillStyle = "#000000";
+                ctx.fillText(text, x1, y1 + 18);
+            });
+        }
+
+        function iou(box1, box2) {
+            return intersection(box1, box2) / union(box1, box2);
+        }
+
+        function union(box1, box2) {
+            const [box1_x1, box1_y1, box1_x2, box1_y2] = box1;
+            const [box2_x1, box2_y1, box2_x2, box2_y2] = box2;
+            const box1_area = (box1_x2 - box1_x1) * (box1_y2 - box1_y1);
+            const box2_area = (box2_x2 - box2_x1) * (box2_y2 - box2_y1);
+            return box1_area + box2_area - intersection(box1, box2);
+        }
+
+        function intersection(box1, box2) {
+            const [box1_x1, box1_y1, box1_x2, box1_y2] = box1;
+            const [box2_x1, box2_y1, box2_x2, box2_y2] = box2;
+            const x1 = Math.max(box1_x1, box2_x1);
+            const y1 = Math.max(box1_y1, box2_y1);
+            const x2 = Math.min(box1_x2, box2_x2);
+            const y2 = Math.min(box1_y2, box2_y2);
+            return (x2 - x1) * (y2 - y1);
         }
 
         async function main() {
