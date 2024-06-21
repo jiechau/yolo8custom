@@ -6,11 +6,19 @@
     <title>YOLOv8 Object Detection with Webcam</title>
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
     <style>
-        #outputCanvas {
-            border: 1px solid #ccc;
-            display: block;
-            margin: 20px auto;
+        #videoElement {
+            display: none;
         }
+        #outputArea {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+        #latestFrame {
+            border: 1px solid #ccc;
+        }
+    </style>
     </style>
 </head>
 <body>
@@ -65,7 +73,6 @@
         }
 
         async function captureAndProcessFrame() {
-
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             const aspectRatio = videoElement.videoWidth / videoElement.videoHeight;
@@ -108,8 +115,8 @@
                     ctx.strokeStyle = "red";
                     ctx.fillStyle = "red";
                 } else {
-                    ctx.strokeStyle = "#00FF00";
-                    ctx.fillStyle = "#00FF00";
+                    ctx.strokeStyle = "green";
+                    ctx.fillStyle = "green";
                 }
                 ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
                 const text = `${label} ${confidence.toFixed(2)}`;
