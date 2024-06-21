@@ -49,9 +49,17 @@
             resizedCanvas.height = inputSize;
             resizedCtx.drawImage(image, 0, 0, inputSize, inputSize);
             const imageData = resizedCtx.getImageData(0, 0, inputSize, inputSize);
-            const input = new Float32Array(imageData.data);
+            const data = imageData.data;
 
-            const tensor = new ort.Tensor('float32', input, [1, inputSize, inputSize, 3]);
+            // Convert to float32 and normalize
+            const input = new Float32Array(inputSize * inputSize * 3);
+            for (let i = 0; i < inputSize * inputSize; i++) {
+                input[i * 3] = data[i * 4] / 255.0;       // R
+                input[i * 3 + 1] = data[i * 4 + 1] / 255.0; // G
+                input[i * 3 + 2] = data[i * 4 + 2] / 255.0; // B
+            }
+
+            const tensor = new ort.Tensor('float32', input, [1, 3, inputSize, inputSize]);
             const feeds = { 'images': tensor };
             const results = await session.run(feeds);
             const output = results.output.data;
@@ -106,3 +114,5 @@
     </script>
 </body>
 </html>
+
+
