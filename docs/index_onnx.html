@@ -72,11 +72,14 @@
             const yOffset = (640 - targetHeight) / 2;
 
             ctx.drawImage(img, xOffset, yOffset, targetWidth, targetHeight);
-            draw_boxes(boxes, ctx);
+            //draw_boxes(boxes, ctx);
+            draw_boxes(boxes, ctx, xOffset, yOffset, targetWidth, targetHeight, img.width, img.height);
+
 
             latestFrame.src = canvas.toDataURL('image/jpeg');
         }
 
+        /*
         function draw_boxes(boxes, ctx) {
             ctx.lineWidth = 3;
             ctx.font = "18px serif";
@@ -91,6 +94,31 @@
                 ctx.fillText(text, x1, y1 + 18);
             });
         }
+        */
+
+        function draw_boxes(boxes, ctx, xOffset, yOffset, targetWidth, targetHeight, originalWidth, originalHeight) {
+            ctx.lineWidth = 3;
+            ctx.font = "18px serif";
+            boxes.forEach(([x1, y1, x2, y2, label, confidence]) => {
+                // Scale and offset the coordinates
+                const scaledX1 = (x1 / originalWidth) * targetWidth + xOffset;
+                const scaledY1 = (y1 / originalHeight) * targetHeight + yOffset;
+                const scaledX2 = (x2 / originalWidth) * targetWidth + xOffset;
+                const scaledY2 = (y2 / originalHeight) * targetHeight + yOffset;
+
+                ctx.strokeStyle = "green";
+                ctx.fillStyle = "green";
+                ctx.strokeRect(scaledX1, scaledY1, scaledX2 - scaledX1, scaledY2 - scaledY1);
+                
+                const text = `${label} ${confidence.toFixed(2)}`;
+                const width = ctx.measureText(text).width;
+                ctx.fillRect(scaledX1, scaledY1, width + 10, 25);
+                ctx.fillStyle = "#000000";
+                ctx.fillText(text, scaledX1, scaledY1 + 18);
+            });
+        }
+
+
 
         async function detect_objects_on_image(buf) {
             const [input, img_width, img_height] = await prepare_input(buf);
@@ -133,7 +161,7 @@
 
         function process_output(output, img_width, img_height) {
             let boxes = [];
-            for (let index = 0; 8400 > index; index++) {
+            for (let index = 0; 100 > index; index++) {
                 const [class_id, prob] = [...Array(80).keys()]
                     .map(col => [col, output[8400 * (col + 4) + index]])
                     .reduce((accum, item) => item[1] > accum[1] ? item : accum, [0, 0]);

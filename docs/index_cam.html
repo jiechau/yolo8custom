@@ -106,18 +106,8 @@
         function setFPS() {
             const fpsInput = document.getElementById('fpsInput');
             const newFPS = parseFloat(fpsInput.value);
-
             FPS = newFPS;
             updateFPS();
-
-            /*
-            if (newFPS > 0 && newFPS <= 60) {
-                FPS = newFPS;
-                updateFPS();
-            } else {
-                alert('Please enter a valid FPS value between 1 and 60.');
-            }
-            */
         }
 
         function updateFPS() {
