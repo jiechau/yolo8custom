@@ -77,26 +77,46 @@
 
         function drawDetections(outputData, imgWidth, imgHeight, ctx) {
             const threshold = 0.5;
-            for (let i = 0; i < outputData.length; i += 7) {
-                const [x1, y1, x2, y2, confidence, classId] = outputData.slice(i, i + 6);
-                if (confidence > threshold) {
-                    const label = classNames[classId];
-                    const color = `hsl(${classId * 137.5 % 360}, 70%, 50%)`;
-                    
-                    ctx.strokeStyle = color;
-                    ctx.lineWidth = 2;
-                    ctx.strokeRect(
-                        x1 * imgWidth, y1 * imgHeight,
-                        (x2 - x1) * imgWidth, (y2 - y1) * imgHeight
-                    );
-                    
-                    ctx.fillStyle = color;
-                    ctx.font = '12px Arial';
-                    ctx.fillText(
-                        `${label} ${confidence.toFixed(2)}`,
-                        x1 * imgWidth, y1 * imgHeight - 5
-                    );
+            const boxes = [];
+            const scores = [];
+            const classes = [];
+
+            // YOLO v8 output format: [x, y, w, h, conf, class0_conf, class1_conf, ...]
+            const numClasses = classNames.length;
+            const numBoxes = outputData.length / (numClasses + 5);
+
+            for (let i = 0; i < numBoxes; i++) {
+                const baseIndex = i * (numClasses + 5);
+                const [x, y, w, h, conf] = outputData.slice(baseIndex, baseIndex + 5);
+                const classScores = outputData.slice(baseIndex + 5, baseIndex + 5 + numClasses);
+                const classIndex = classScores.indexOf(Math.max(...classScores));
+
+                if (conf > threshold) {
+                    boxes.push([x - w/2, y - h/2, w, h]);  // Convert to [x1, y1, w, h]
+                    scores.push(conf);
+                    classes.push(classIndex);
                 }
+            }
+
+            for (let i = 0; i < boxes.length; i++) {
+                const [x, y, w, h] = boxes[i];
+                const label = classNames[classes[i]];
+                const score = scores[i];
+                const color = `hsl(${classes[i] * 137.5 % 360}, 70%, 50%)`;
+
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(
+                    x * imgWidth, y * imgHeight,
+                    w * imgWidth, h * imgHeight
+                );
+
+                ctx.fillStyle = color;
+                ctx.font = '12px Arial';
+                ctx.fillText(
+                    `${label} ${score.toFixed(2)}`,
+                    x * imgWidth, y * imgHeight - 5
+                );
             }
         }
 
