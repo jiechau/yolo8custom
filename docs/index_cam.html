@@ -49,7 +49,7 @@
                 videoElement.srcObject = stream;
                 videoElement.addEventListener('loadedmetadata', startCapture);
             } catch (error) {
-                console.error('Error accessing camera:', error);
+                //console.error('Error accessing camera:', error);
                 // Fallback to any available camera if the rear camera is not available
                 try {
                     const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -95,6 +95,7 @@
             startCapture();
         }
 
+        /*
         // Allow changing FPS from the console
         Object.defineProperty(window, 'FPS', {
             get: () => FPS,
@@ -105,6 +106,7 @@
                 console.log(`FPS set to ${FPS}`);
             }
         });
+        */
     </script>
 </body>
 </html>
