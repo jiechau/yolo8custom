@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YOLOv8 Object Detection with Image URL</title>
+    <title>YOLOv8 Object Detection with URL Image</title>
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
     <style>
         #outputArea {
@@ -18,35 +18,63 @@
     </style>
 </head>
 <body>
-    <h1>YOLOv8 Object Detection with Image URL</h1>
+    <h1>YOLOv8 Object Detection with URL Image</h1>
     <div>
         <input type="text" id="imageUrl" value="https://raw.githubusercontent.com/ultralytics/yolov5/master/data/images/bus.jpg">
-        <button onclick="runInference()">Submit</button>
+        <button onclick="runInference()" id="submitBtn" disabled>Submit</button>
     </div>
     <div id="outputArea">
         <img id="latestFrame" width="640" height="640" />
     </div>
 
     <script>
+        let latestFrame;
         const modelPromise = ort.InferenceSession.create("yolov8n.onnx");
+
+        document.addEventListener('DOMContentLoaded', () => {
+            latestFrame = document.getElementById('latestFrame');
+            document.getElementById('submitBtn').disabled = false;
+        });
 
         async function runInference() {
             const imageUrl = document.getElementById('imageUrl').value;
-            const latestFrame = document.getElementById('latestFrame');
-            const imageBlob = await fetch(imageUrl).then(res => res.blob());
-            const boxes = await detect_objects_on_image(imageBlob);
+            try {
+                const response = await fetch(imageUrl);
+                const blob = await response.blob();
+                const boxes = await detect_objects_on_image(blob);
+                await processAndDrawImage(blob, boxes);
+            } catch (error) {
+                console.error('Error processing image:', error);
+            }
+        }
+
+        async function processAndDrawImage(imageBlob, boxes) {
+            const img = new Image();
+            img.src = URL.createObjectURL(imageBlob);
+            await new Promise(resolve => img.onload = resolve);
+
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            const img = new Image();
+            canvas.width = 640;
+            canvas.height = 640;
 
-            img.onload = () => {
-                canvas.width = 640;
-                canvas.height = 640;
-                ctx.drawImage(img, 0, 0, 640, 640);
-                draw_boxes(boxes, ctx);
-                latestFrame.src = canvas.toDataURL('image/jpeg');
-            };
-            img.src = URL.createObjectURL(imageBlob);
+            const aspectRatio = img.width / img.height;
+            let targetWidth, targetHeight;
+            if (aspectRatio > 1) {
+                targetWidth = 640;
+                targetHeight = 640 / aspectRatio;
+            } else {
+                targetHeight = 640;
+                targetWidth = 640 * aspectRatio;
+            }
+
+            const xOffset = (640 - targetWidth) / 2;
+            const yOffset = (640 - targetHeight) / 2;
+
+            ctx.drawImage(img, xOffset, yOffset, targetWidth, targetHeight);
+            draw_boxes(boxes, ctx);
+
+            latestFrame.src = canvas.toDataURL('image/jpeg');
         }
 
         function draw_boxes(boxes, ctx) {
@@ -140,8 +168,8 @@
         function union(box1, box2) {
             const [box1_x1, box1_y1, box1_x2, box1_y2] = box1;
             const [box2_x1, box2_y1, box2_x2, box2_y2] = box2;
-            const box1_area = (box1_x2 - box1_x1) * (box1_y1 - box1_y2);
-            const box2_area = (box2_x2 - box2_x1) * (box2_y1 - box2_y2);
+            const box1_area = (box1_x2 - box1_x1) * (box1_y2 - box1_y1);
+            const box2_area = (box2_x2 - box2_x1) * (box2_y2 - box2_y1);
             return box1_area + box2_area - intersection(box1, box2);
         }
 
