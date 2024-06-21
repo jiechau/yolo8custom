@@ -19,46 +19,39 @@
         <input type="number" id="fpsInput" placeholder="Enter FPS" value="5">
         <button onclick="setFPS()">Set FPS</button>
     </div>
-    <canvas id="outputCanvas" width="640" height="640"></canvas>
+    <div id="outputArea">
+        <img id="latestFrame" width="640" height="640" />
+    </div>
 
     <script>
         let FPS = 5;
-        let videoElement, outputCanvas, ctx, captureInterval;
+        let videoElement, latestFrame, captureInterval;
         //const modelPromise = ort.InferenceSession.create("yolov8n.onnx");
         const modelPromise = ort.InferenceSession.create("best.onnx");
 
         document.addEventListener('DOMContentLoaded', () => {
-            outputCanvas = document.getElementById('outputCanvas');
-            ctx = outputCanvas.getContext('2d');
+            videoElement = document.getElementById('videoElement');
+            latestFrame = document.getElementById('latestFrame');
             initializeCamera();
         });
 
         async function initializeCamera() {
             const constraints = {
                 video: {
-                    facingMode: { exact: "environment" },
-                    width: { ideal: 640 },
-                    height: { ideal: 640 }
+                    facingMode: { exact: "environment" }
                 }
             };
 
             try {
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                videoElement = document.createElement('video');
                 videoElement.srcObject = stream;
-                videoElement.width = 640;
-                videoElement.height = 640;
-                videoElement.play();
                 videoElement.addEventListener('loadedmetadata', startCapture);
             } catch (error) {
-                // console.error('Error accessing camera:', error);
+                //console.error('Error accessing camera:', error);
+                // Fallback to any available camera if the rear camera is not available
                 try {
                     const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
-                    videoElement = document.createElement('video');
                     videoElement.srcObject = fallbackStream;
-                    videoElement.width = 640;
-                    videoElement.height = 640;
-                    videoElement.play();
                     videoElement.addEventListener('loadedmetadata', startCapture);
                 } catch (fallbackError) {
                     console.error('Error accessing any camera:', fallbackError);
@@ -71,10 +64,36 @@
         }
 
         async function captureAndProcessFrame() {
-            ctx.drawImage(videoElement, 0, 0, outputCanvas.width, outputCanvas.height);
-            const imageBlob = await new Promise(resolve => outputCanvas.toBlob(resolve, 'image/jpeg'));
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const aspectRatio = videoElement.videoWidth / videoElement.videoHeight;
+
+            let targetWidth, targetHeight;
+            if (aspectRatio > 1) {
+                targetWidth = 640;
+                targetHeight = 640 / aspectRatio;
+            } else {
+                targetHeight = 640;
+                targetWidth = 640 * aspectRatio;
+            }
+
+            canvas.width = 640;
+            canvas.height = 640;
+
+            const xOffset = (640 - targetWidth) / 2;
+            const yOffset = (640 - targetHeight) / 2;
+
+            ctx.drawImage(videoElement, xOffset, yOffset, targetWidth, targetHeight);
+
+            // here
+            const imageBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
             const boxes = await detect_objects_on_image(imageBlob);
             draw_boxes(boxes);
+            // end here
+
+            latestFrame.src = canvas.toDataURL('image/jpeg');
+
         }
 
         function draw_boxes(boxes) {
