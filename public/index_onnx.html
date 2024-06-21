@@ -28,8 +28,8 @@
         ];
 
         const urls = [
-            'https://img.shopping.friday.tw/images/product/289/8686719/8686719_3_1.webp',  // Replace with the actual image URL
-            'https://raw.githubusercontent.com/ultralytics/yolov5/master/data/images/bus.jpg'   // Replace with the actual image URL
+            'https://img.shopping.friday.tw/images/product/289/8686719/8686719_3_1.webp',
+            'https://raw.githubusercontent.com/ultralytics/yolov5/master/data/images/bus.jpg'
         ];
 
         async function loadModel() {
@@ -62,7 +62,12 @@
             const tensor = new ort.Tensor('float32', input, [1, 3, inputSize, inputSize]);
             const feeds = { 'images': tensor };
             const results = await session.run(feeds);
-            const output = results.output.data;
+
+            // Log the keys of the output to identify the correct key
+            console.log('Inference results:', results);
+            
+            // Assuming the key of the output is 'output' (update if different)
+            const output = results[Object.keys(results)[0]].data;
 
             // Draw the original image on the output canvas
             canvas.width = image.width;
@@ -114,5 +119,3 @@
     </script>
 </body>
 </html>
-
-
