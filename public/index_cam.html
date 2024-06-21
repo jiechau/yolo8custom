@@ -90,6 +90,11 @@
             latestFrame.src = canvas.toDataURL('image/jpeg');
         }
 
+        function updateFPS() {
+            clearInterval(captureInterval);
+            startCapture();
+        }
+
         // Allow changing FPS from the console
         Object.defineProperty(window, 'FPS', {
             get: () => FPS,
