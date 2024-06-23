@@ -32,21 +32,49 @@
     <div id="infoFrame">
         YOLOv8 Object Detection with URL Image
         <div id="inputContainer">
+            Model:<select id="modelSelect" onchange="changeModel()">
+                <option value="yolov8n.onnx">object detect</option>
+                <option value="best.onnx">Man/Woman</option>
+            </select>
+            &nbsp;&nbsp;
             <input type="text" id="imageUrl" value="https://raw.githubusercontent.com/ultralytics/yolov5/master/data/images/bus.jpg">
             <button onclick="runInference()" id="submitBtn" disabled>Submit</button>
         </div>
-        https://raw.githubusercontent.com/ultralytics/yolov5/master/data/images/bus.jpg
-        https://ultralytics.com/images/zidane.jpg
     </div>
+    https://raw.githubusercontent.com/ultralytics/yolov5/master/data/images/bus.jpg <br/>
+    https://ultralytics.com/images/zidane.jpg <br/>
     <div id="outputArea">
         <img id="latestFrame" width="640" height="640" />
     </div>
 
     <script>
         let latestFrame;
-        const modelPromise = ort.InferenceSession.create("yolov8n.onnx");
+
+        let model_file, yolo_classes, modelPromise;
+        model_file = 'yolov8n.onnx'
+        //model_file = 'best.onnx'
+
+        model_classes = {
+            'yolov8n.onnx': ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'],
+            'best.onnx': ['Female', 'Male']
+        }
+
+        function updateModel() {
+            yolo_classes = model_classes[model_file]
+            modelPromise = ort.InferenceSession.create(model_file);
+        }
+
+        function changeModel() {
+            const modelSelect = document.getElementById('modelSelect');
+            model_file = modelSelect.value;
+            updateModel();
+        }
+
+
+
 
         document.addEventListener('DOMContentLoaded', () => {
+            updateModel();
             latestFrame = document.getElementById('latestFrame');
             document.getElementById('submitBtn').disabled = false;
         });
@@ -239,7 +267,6 @@
             return (x2 - x1) * (y2 - y1);
         }
 
-        const yolo_classes = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'];
     </script>
 </body>
 </html>
