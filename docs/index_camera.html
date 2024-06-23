@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Webcam Frame Capture</title>
     <style>
-        #fpsInput {
+        #infoFrame {
             justify-content: center;
             align-items: center;
         }    
@@ -24,7 +24,7 @@
     </style>
 </head>
 <body>
-    <div>
+    <div id="infoFrame">
         <h1>Webcam Frame Capture</h1>
         <input type="number" id="fpsInput" placeholder="Enter FPS" value="5">
         <button onclick="setFPS()">Set FPS</button>
