@@ -35,7 +35,10 @@
         let targetFPS = 5;
         let videoElement, latestFrame;
         let lastFrameTime = 0;
-        //let frameInterval = 1000 / targetFPS;
+
+        let canvas, ctx, aspectRatio;
+        canvas = document.createElement('canvas');
+        ctx = canvas.getContext('2d');
 
         const modelPromise = ort.InferenceSession.create("yolov8n.onnx");
         //const modelPromise = ort.InferenceSession.create("best.onnx");
@@ -71,26 +74,21 @@
                     console.error('Error accessing any camera:', fallbackError);
                 }
             }
+
+            aspectRatio = videoElement.videoWidth / videoElement.videoHeight;
+
         }
 
         function startCapture() {
             captureInterval = setInterval(captureAndProcessFrame, 1000 / targetFPS);
-            //requestAnimationFrame(captureLoop);
         }
-        /*
-        function captureLoop(timestamp) {
-            if (timestamp - lastFrameTime >= frameInterval) {
-                captureAndProcessFrame();
-                lastFrameTime = timestamp;
-            }
-            requestAnimationFrame(captureLoop);
-        }
-        */
 
         async function captureAndProcessFrame() {
+            /*
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             const aspectRatio = videoElement.videoWidth / videoElement.videoHeight;
+            */
 
             let targetWidth, targetHeight;
             if (aspectRatio > 1) {
