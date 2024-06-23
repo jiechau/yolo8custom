@@ -6,6 +6,17 @@
     <title>YOLOv8 Object Detection with Webcam</title>
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
     <style>
+        #infoFrame {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        #inputContainer {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+        }
         #videoElement {
             display: none;
         }
@@ -21,10 +32,12 @@
     </style>
 </head>
 <body>
+    <div id="infoFrame">
     <h1>YOLOv8 Object Detection with Webcam</h1>
-    <div>
-        <input type="number" id="fpsInput" placeholder="Enter FPS" value="5">
-        <button onclick="setFPS()">Set FPS</button>
+        <div id="inputContainer">
+            <input type="number" id="fpsInput" placeholder="Enter FPS" value="5">
+            <button onclick="setFPS()">Set FPS</button>
+        </div>
     </div>
     <video id="videoElement" autoplay playsinline></video>
     <div id="outputArea">
