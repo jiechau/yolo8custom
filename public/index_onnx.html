@@ -7,6 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
     <style>
         #infoFrame {
+            display: flex;
             justify-content: center;
             align-items: center;
         }
@@ -23,7 +24,7 @@
 </head>
 <body>
     <div id="infoFrame">
-        <h1>YOLOv8 Object Detection with URL Image</h1>
+        <h1>YOLOv8 Object Detection with URL Image</h1><br/>
         <input type="text" id="imageUrl" value="https://raw.githubusercontent.com/ultralytics/yolov5/master/data/images/bus.jpg">
         <button onclick="runInference()" id="submitBtn" disabled>Submit</button>
     </div>

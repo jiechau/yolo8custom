@@ -6,6 +6,7 @@
     <title>Webcam Frame Capture</title>
     <style>
         #infoFrame {
+            display: flex;
             justify-content: center;
             align-items: center;
         }    
@@ -25,7 +26,7 @@
 </head>
 <body>
     <div id="infoFrame">
-        <h1>Webcam Frame Capture</h1>
+        <h1>Webcam Frame Capture</h1><br/>
         <input type="number" id="fpsInput" placeholder="Enter FPS" value="5">
         <button onclick="setFPS()">Set FPS</button>
     </div>
