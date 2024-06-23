@@ -35,12 +35,13 @@
     <div id="infoFrame">
         YOLOv8 Object Detection with Webcam
         <div id="inputContainer">
-            <input type="number" id="fpsInput" placeholder="Enter FPS" value="5">
-            <button onclick="setFPS()">Set FPS</button>
-            <select id="modelSelect" onchange="changeModel()">
+            Model:<select id="modelSelect" onchange="changeModel()">
                 <option value="yolov8n.onnx">YOLOv8n</option>
                 <option value="best.onnx">Man/Woman</option>
             </select>
+            &nbsp;&nbsp; 
+            <input type="number" id="fpsInput" placeholder="Enter FPS" value="5">
+            <button onclick="setFPS()">Set FPS</button>
         </div>
     </div>
     <video id="videoElement" autoplay playsinline></video>
