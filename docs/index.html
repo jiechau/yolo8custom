@@ -6,6 +6,10 @@
     <title>YOLOv8 Object Detection with Webcam</title>
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
     <style>
+        #fpsInput {
+            justify-content: center;
+            align-items: center;
+        }     
         #videoElement {
             display: none;
         }
@@ -21,8 +25,8 @@
     </style>
 </head>
 <body>
-    <h1>YOLOv8 Object Detection with Webcam</h1>
     <div>
+        <h1>YOLOv8 Object Detection with Webcam</h1>
         <input type="number" id="fpsInput" placeholder="Enter FPS" value="5">
         <button onclick="setFPS()">Set FPS</button>
     </div>
