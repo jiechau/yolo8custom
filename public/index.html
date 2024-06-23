@@ -8,9 +8,15 @@
     <style>
         #infoFrame {
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-        }     
+        }
+        #inputContainer {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+        }
         #videoElement {
             display: none;
         }
@@ -27,9 +33,11 @@
 </head>
 <body>
     <div id="infoFrame">
-        <h1>YOLOv8 Object Detection with Webcam</h1><br/>
-        <input type="number" id="fpsInput" placeholder="Enter FPS" value="5">
-        <button onclick="setFPS()">Set FPS</button>
+        <h1>YOLOv8 Object Detection with Webcam</h1>
+        <div id="inputContainer">
+            <input type="number" id="fpsInput" placeholder="Enter FPS" value="5">
+            <button onclick="setFPS()">Set FPS</button>
+        </div>
     </div>
     <video id="videoElement" autoplay playsinline></video>
     <div id="outputArea">
