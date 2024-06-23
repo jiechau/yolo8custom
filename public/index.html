@@ -35,7 +35,7 @@
         let targetFPS = 5;
         let videoElement, latestFrame;
         let lastFrameTime = 0;
-        let frameInterval = 1000 / targetFPS;
+        //let frameInterval = 1000 / targetFPS;
 
         const modelPromise = ort.InferenceSession.create("yolov8n.onnx");
         //const modelPromise = ort.InferenceSession.create("best.onnx");
@@ -74,9 +74,10 @@
         }
 
         function startCapture() {
-            requestAnimationFrame(captureLoop);
+            captureInterval = setInterval(captureAndProcessFrame, 1000 / targetFPS);
+            //requestAnimationFrame(captureLoop);
         }
-
+        /*
         function captureLoop(timestamp) {
             if (timestamp - lastFrameTime >= frameInterval) {
                 captureAndProcessFrame();
@@ -84,6 +85,7 @@
             }
             requestAnimationFrame(captureLoop);
         }
+        */
 
         async function captureAndProcessFrame() {
             const canvas = document.createElement('canvas');
@@ -228,11 +230,18 @@
             return (x2 - x1) * (y2 - y1);
         }
 
+        function updateFPS() {
+            clearInterval(captureInterval);
+            startCapture();
+        }
+
         function setFPS() {
             const fpsInput = document.getElementById('fpsInput');
             targetFPS = parseFloat(fpsInput.value);
-            frameInterval = 1000 / targetFPS;
+            //frameInterval = 1000 / targetFPS;
+            updateFPS();
         }
+
     </script>
 </body>
 </html>

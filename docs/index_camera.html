@@ -103,16 +103,16 @@
             latestFrame.src = canvas.toDataURL('image/jpeg');
         }
 
+        function updateFPS() {
+            clearInterval(captureInterval);
+            startCapture();
+        }
+
         function setFPS() {
             const fpsInput = document.getElementById('fpsInput');
             const newFPS = parseFloat(fpsInput.value);
             FPS = newFPS;
             updateFPS();
-        }
-
-        function updateFPS() {
-            clearInterval(captureInterval);
-            startCapture();
         }
 
     </script>
