@@ -2,7 +2,7 @@
 ## yolov8 nano onnx version
 
 - [Object Detection with Webcam/Mobile Camera in live streaming](https://jiechau.gitlab.io/yolo8custom/index.html)
-- switch model: default yolo8vn (coco 2017 datast), woman-man (2022 dataset)
+- switch model: default yolo8vn (coco 2017 dataset), women-men (2022 dataset)
 - FPS can be a decimal number, for example, 0.3 means 1 frame every 3 seconds.
 
 
@@ -67,6 +67,13 @@ yolo task=detect mode=train model=yolov8n.pt imgsz=640 data=data.yaml epochs=200
 cp ./runs/detect/yolov8n_custom4/weights/best.pt .
 ```
 
+convert to onnx
+```
+from ultralytics import YOLO
+model = YOLO("./best.pt")
+model.export(format="onnx")  # creates 'best.onnx'
+```
+
 ## run some tests in colab
 ```
 # having best.pt
@@ -90,7 +97,17 @@ clearml-init
 ```
 
 
-## datasets memo
+## basic memo/reference
+
+```
+# basic
+https://docs.ultralytics.com/zh/models/
+
+# training
+https://docs.ultralytics.com/modes/train/
+```
+
+## datasets memo/refrernce
 ```
 # some other dataset and reference:
 
