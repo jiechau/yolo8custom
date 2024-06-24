@@ -36,8 +36,9 @@
         YOLOv8 Object Detection with Webcam
         <div id="inputContainer">
             Model:<select id="modelSelect" onchange="changeModel()">
-                <option value="yolov8n.onnx">object detect</option>
-                <option value="best.onnx">Man/Woman</option>
+                <option value="yolov8n.onnx">object detect COCO</option>
+                <option value="yolov8n-oiv7">object detect open images</option>
+                <option value="best.onnx">women-men</option>
             </select>
             &nbsp;&nbsp; 
             <input type="number" id="fpsInput" placeholder="Enter FPS" value="5">
@@ -63,7 +64,7 @@
             .then(response => response.text())
             .then(data => {
                 yolov8n_oiv7_names = data.split(',');
-                console.log(yolov8n_oiv7_names);
+                //console.log(yolov8n_oiv7_names);
             })
             .catch(error => console.error('Error loading the file:', error));
 
