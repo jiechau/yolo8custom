@@ -2,7 +2,7 @@
 ## yolov8 nano onnx version
 
 - [Object Detection with Webcam/Mobile Camera in live streaming](https://jiechau.gitlab.io/yolo8custom/index.html)
-- switch model: default yolo8vn (coco 2017 dataset), women-men (2022 dataset)
+- switch model: default yolo8vn (coco 2017 dataset), yolov8n-oiv7 (open images v7 dataset), women-men (2022 dataset)
 - FPS can be a decimal number, for example, 0.3 means 1 frame every 3 seconds.
 
 
