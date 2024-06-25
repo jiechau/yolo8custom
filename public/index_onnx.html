@@ -59,12 +59,12 @@
         model_file = 'yolov8n.onnx'
         //model_file = 'best.onnx'
 
-        let yolov8n_oiv7_names;
+        // let yolov8n_oiv7_names;
 
         fetch('yolov8n-oiv7-names.txt')
             .then(response => response.text())
             .then(data => {
-                yolov8n_oiv7_names = data.split(',');
+                const yolov8n_oiv7_names = data.split(',');
                 //console.log(yolov8n_oiv7_names);
             })
             .catch(error => console.error('Error loading the file:', error));
