@@ -60,7 +60,7 @@
         //model_file = 'best.onnx'
 
         let yolov8n_oiv7_names;
-        /*
+
         fetch('yolov8n-oiv7-names.txt')
             .then(response => response.text())
             .then(data => {
@@ -68,27 +68,13 @@
                 //console.log(yolov8n_oiv7_names);
             })
             .catch(error => console.error('Error loading the file:', error));
-        model_classes = {
+
+        let model_classes = {
             'yolov8n.onnx': ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'],
             'yolov8n-oiv7.onnx': yolov8n_oiv7_names,
             'best.onnx': ['Female', 'Male']
         }
-        */
-        fetch('yolov8n-oiv7-names.txt')
-            .then(response => response.text())
-            .then(data => {
-                yolov8n_oiv7_names = data.split(',');
-                // Now that yolov8n_oiv7_names is populated, assign the model_classes
-                let model_classes = {
-                    'yolov8n.onnx': ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'],
-                    'yolov8n-oiv7.onnx': yolov8n_oiv7_names,
-                    'best.onnx': ['Female', 'Male']
-                };
-                
-                // Now you can use model_classes
-                console.log(model_classes['yolov8n-oiv7.onnx']);  // Should print the array with 601 elements
-            })
-            .catch(error => console.error('Error loading the file:', error));
+        // model_classes['yolov8n-oiv7.onnx']
 
         function updateModel() {
             yolo_classes = model_classes[model_file]
