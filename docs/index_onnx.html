@@ -63,7 +63,7 @@
         fetch('yolov8n-oiv7-names.txt')
             .then(response => response.text())
             .then(data => {
-                const yolov8n_oiv7_names = data.split(',');
+                yolov8n_oiv7_names = data.split(',');
                 //console.log(yolov8n_oiv7_names);
             })
             .catch(error => console.error('Error loading the file:', error));
