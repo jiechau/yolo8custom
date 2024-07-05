@@ -1,12 +1,18 @@
 
-## yolov8 nano onnx version
+# yolov8 nano onnx version
 
-- [Object Detection with Webcam/Mobile Camera in live streaming](https://jiechau.gitlab.io/yolo8custom/index.html)
+
+
+<a href="https://jiechau.gitlab.io/yolo8custom/index.html">
+    <img src="img/img1.png" alt="from repo" width="500px">
+</a>
+
+- try here: [Object Detection with Webcam/Mobile Camera in live streaming](https://jiechau.gitlab.io/yolo8custom/index.html)
 - switch model: default yolo8vn (coco 2017 dataset), women-men (2022 dataset)
 - FPS can be a decimal number, for example, 0.3 means 1 frame every 3 seconds.
 
 
-other quick links and reference:<br/>
+## other quick links and reference:<br/>
 
 - [gitlab page onnx](https://jiechau.gitlab.io/yolo8custom/index_onnx.html)
 - [gitlab page camera](https://jiechau.gitlab.io/yolo8custom/index_camera.html)
