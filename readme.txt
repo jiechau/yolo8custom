@@ -117,3 +117,22 @@ https://github.com/akbartus/Yolov8-Object-Detection-on-Browser/blob/main/yolov8_
 # ref
 https://learnopencv.com/train-yolov8-on-custom-dataset/
 
+其他
+https://dipankarmedh1.medium.com/real-time-object-detection-with-yolo-and-webcam-enhancing-your-computer-vision-skills-861b97c78993
+
+
+基本安裝 ultralytics
+https://docs.ultralytics.com/zh/models/#featured-models
+onnx
+https://docs.ultralytics.com/zh/integrations/onnx/#onnx-and-onnx-runtime
+onnx browser
+https://github.com/akbartus/Yolov8-Object-Detection-on-Browser/tree/main
+
+
+訓練自訂模型
+https://medium.com/@EricChou711/yolov8-%E4%BB%8B%E7%B4%B9%E5%92%8C%E6%89%8B%E6%8A%8A%E6%89%8B%E8%A8%93%E7%B7%B4%E8%87%AA%E8%A8%82%E7%BE%A9%E6%A8%A1%E5%9E%8B-752d8d32cb73
+
+bus picture:
+https://raw.githubusercontent.com/ultralytics/yolov5/master/data/images/bus.jpg
+
+
