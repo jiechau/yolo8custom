@@ -114,10 +114,16 @@
                 }
             } catch (error) {
                 console.error('Error accessing camera:', error);
-                // Display a user-friendly error message
+                if (error.name === 'NotFoundError') {
+                alert('No camera found. Please connect a camera or ensure it is enabled.');
+                } else if (error.name === 'NotAllowedError') {
+                alert('Camera access denied. Please grant permission to use the camera.');
+                } else {
                 alert('Unable to access camera. Please check your device settings and permissions.');
+                }
             }
-            }
+
+        }
 
         function startCapture() {
             captureInterval = setInterval(captureAndProcessFrame, 1000 / targetFPS);
