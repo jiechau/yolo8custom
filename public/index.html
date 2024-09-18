@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YOLOv8 Object Detection</title>
+    <title>YOLOv8 Object Detection with Webcam</title>
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
     <style>
         #infoFrame {
@@ -29,24 +29,17 @@
         #latestFrame {
             border: 1px solid #ccc;
         }
-        #errorMessage {
-            color: red;
-            font-weight: bold;
-            text-align: center;
-            margin-top: 20px;
-        }
-        #fileInputContainer {
-            margin-top: 20px;
-            display: none;
-        }
     </style>
 </head>
 <body>
     <div id="infoFrame">
-        YOLOv8 Object Detection
+        YOLOv8 Object Detection with Webcam
         <div id="inputContainer">
             Model:<select id="modelSelect" onchange="changeModel()">
                 <option value="yolov8n.onnx">object detect COCO</option>
+                <!--
+                <option value="yolov8n-oiv7.onnx">object detect open images</option>
+                -->
                 <option value="best.onnx">women-men</option>
             </select>
             &nbsp;&nbsp; 
@@ -58,10 +51,6 @@
     <div id="outputArea">
         <img id="latestFrame" width="640" height="640" />
     </div>
-    <div id="errorMessage"></div>
-    <div id="fileInputContainer">
-        <input type="file" id="fileInput" accept="image/*" onchange="handleFileInput(event)">
-    </div>
 
     <script>
         let targetFPS = 5;
@@ -70,12 +59,14 @@
 
         let model_file, yolo_classes, modelPromise;
         model_file = 'yolov8n.onnx'
+        //model_file = 'best.onnx'
 
         let yolov8n_oiv7_names;
         fetch('yolov8n-oiv7-names.txt')
             .then(response => response.text())
             .then(data => {
                 yolov8n_oiv7_names = data.split(',');
+                //console.log(yolov8n_oiv7_names);
             })
             .catch(error => console.error('Error loading the file:', error));
 
@@ -105,25 +96,35 @@
 
         async function initializeCamera() {
             try {
+                // Enumerate available cameras
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const rearCamera = devices.find(device => device.kind === 'videoinput' && device.label.includes('rear'));
+
+                // If a rear camera is found, use it
+                if (rearCamera) {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { deviceId: { exact: rearCamera.deviceId } }
+                });
+                // ... use the stream to display the video ...
+                } else {
+                // Fallback to any available camera
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                videoElement.srcObject = stream;
-                videoElement.addEventListener('loadedmetadata', startCapture);
-                document.getElementById('errorMessage').style.display = 'none';
-                document.getElementById('fileInputContainer').style.display = 'none';
+                // ... use the stream to display the video ...
+                console.log("No rear camera found, using default camera.");
+                }
             } catch (error) {
                 console.error('Error accessing camera:', error);
-                document.getElementById('errorMessage').textContent = `No camera found or permission denied. Error: ${error.message}. You can upload an image instead.`;
-                document.getElementById('errorMessage').style.display = 'block';
-                document.getElementById('latestFrame').style.display = 'none';
-                document.getElementById('fileInputContainer').style.display = 'block';
+                // Display a user-friendly error message
+                alert('Unable to access camera. Please check your device settings and permissions.');
             }
-        }
+            }
 
         function startCapture() {
             captureInterval = setInterval(captureAndProcessFrame, 1000 / targetFPS);
         }
 
         async function captureAndProcessFrame() {
+
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             const aspectRatio = videoElement.videoWidth / videoElement.videoHeight;
@@ -146,42 +147,10 @@
             ctx.drawImage(videoElement, xOffset, yOffset, targetWidth, targetHeight);
 
             const imageBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
-            processImage(imageBlob);
-        }
-
-        async function processImage(imageBlob) {
             const boxes = await detect_objects_on_image(imageBlob);
-            const canvas = document.createElement('canvas');
-            canvas.width = 640;
-            canvas.height = 640;
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                ctx.drawImage(img, 0, 0, 640, 640);
-                draw_boxes(boxes, ctx);
-                latestFrame.src = canvas.toDataURL('image/jpeg');
-            };
-            img.src = URL.createObjectURL(imageBlob);
-        }
+            draw_boxes(boxes, ctx);
 
-        function handleFileInput(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d');
-                        canvas.width = 640;
-                        canvas.height = 640;
-                        ctx.drawImage(img, 0, 0, 640, 640);
-                        canvas.toBlob(processImage, 'image/jpeg');
-                    }
-                    img.src = e.target.result;
-                }
-                reader.readAsDataURL(file);
-            }
+            latestFrame.src = canvas.toDataURL('image/jpeg');
         }
 
         function draw_boxes(boxes, ctx) {
@@ -306,8 +275,10 @@
         function setFPS() {
             const fpsInput = document.getElementById('fpsInput');
             targetFPS = parseFloat(fpsInput.value);
+            //frameInterval = 1000 / targetFPS;
             updateFPS();
         }
+
     </script>
 </body>
 </html>
