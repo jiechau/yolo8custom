@@ -88,10 +88,12 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            initializeCamera();
+            
             updateModel();
             videoElement = document.getElementById('videoElement');
             latestFrame = document.getElementById('latestFrame');
-            initializeCamera();
+
         });
 
         async function initializeCamera() {
