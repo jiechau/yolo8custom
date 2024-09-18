@@ -29,6 +29,12 @@
         #latestFrame {
             border: 1px solid #ccc;
         }
+        #errorMessage {
+            color: red;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -37,9 +43,6 @@
         <div id="inputContainer">
             Model:<select id="modelSelect" onchange="changeModel()">
                 <option value="yolov8n.onnx">object detect COCO</option>
-                <!--
-                <option value="yolov8n-oiv7.onnx">object detect open images</option>
-                -->
                 <option value="best.onnx">women-men</option>
             </select>
             &nbsp;&nbsp; 
@@ -51,6 +54,7 @@
     <div id="outputArea">
         <img id="latestFrame" width="640" height="640" />
     </div>
+    <div id="errorMessage"></div>
 
     <script>
         let targetFPS = 5;
@@ -105,15 +109,20 @@
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 videoElement.srcObject = stream;
                 videoElement.addEventListener('loadedmetadata', startCapture);
+                document.getElementById('errorMessage').style.display = 'none';
             } catch (error) {
-                //console.error('Error accessing camera:', error);
+                console.error('Error accessing rear camera:', error);
                 // Fallback to any available camera if the rear camera is not available
                 try {
                     const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
                     videoElement.srcObject = fallbackStream;
                     videoElement.addEventListener('loadedmetadata', startCapture);
+                    document.getElementById('errorMessage').style.display = 'none';
                 } catch (fallbackError) {
                     console.error('Error accessing any camera:', fallbackError);
+                    document.getElementById('errorMessage').textContent = 'No camera found. Please ensure you have a working camera and have granted the necessary permissions.';
+                    document.getElementById('errorMessage').style.display = 'block';
+                    document.getElementById('latestFrame').style.display = 'none';
                 }
             }
         }
@@ -274,7 +283,6 @@
         function setFPS() {
             const fpsInput = document.getElementById('fpsInput');
             targetFPS = parseFloat(fpsInput.value);
-            //frameInterval = 1000 / targetFPS;
             updateFPS();
         }
 
