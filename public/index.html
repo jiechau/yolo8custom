@@ -96,33 +96,53 @@
 
         async function initializeCamera() {
             try {
+                // Check if mediaDevices is supported
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('mediaDevices API not supported');
+                }
+
+                // Request permission first
+                await navigator.mediaDevices.getUserMedia({ video: true });
+
                 // Enumerate available cameras
                 const devices = await navigator.mediaDevices.enumerateDevices();
-                const rearCamera = devices.find(device => device.kind === 'videoinput' && device.label.includes('rear'));
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
 
-                // If a rear camera is found, use it
-                if (rearCamera) {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { deviceId: { exact: rearCamera.deviceId } }
-                });
-                // ... use the stream to display the video ...
-                } else {
-                // Fallback to any available camera
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                // ... use the stream to display the video ...
-                console.log("No rear camera found, using default camera.");
+                if (videoDevices.length === 0) {
+                    throw new Error('No video input devices found');
                 }
+
+                // Try to find the rear camera
+                const rearCamera = videoDevices.find(device => device.label.toLowerCase().includes('rear'));
+
+                // If a rear camera is found, use it; otherwise, use the first available camera
+                const selectedCamera = rearCamera || videoDevices[0];
+
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { deviceId: { exact: selectedCamera.deviceId } }
+                });
+
+                // Use the stream to display the video
+                const videoElement = document.getElementById('videoElement'); // Make sure you have this element in your HTML
+                if (videoElement) {
+                    videoElement.srcObject = stream;
+                } else {
+                    console.error('Video element not found');
+                }
+
+                console.log("Camera initialized successfully");
             } catch (error) {
                 console.error('Error accessing camera:', error);
-                if (error.name === 'NotFoundError') {
-                alert('No camera found. Please connect a camera or ensure it is enabled.');
+                if (error.name === 'NotFoundError' || error.message === 'No video input devices found') {
+                    alert('No camera found. Please connect a camera or ensure it is enabled.');
                 } else if (error.name === 'NotAllowedError') {
-                alert('Camera access denied. Please grant permission to use the camera.');
+                    alert('Camera access denied. Please grant permission to use the camera.');
+                } else if (error.name === 'NotReadableError') {
+                    alert('Camera is already in use by another application. Please close other apps using the camera.');
                 } else {
-                alert('Unable to access camera. Please check your device settings and permissions.');
+                    alert(`Unable to access camera: ${error.message}`);
                 }
             }
-
         }
 
         function startCapture() {
